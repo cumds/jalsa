@@ -167,7 +167,7 @@
     <div class="big">
       <div class="lbl">يبدأ بالسؤال</div>
       <div class="name" id="starter"></div>
-      <div class="timer" id="timer">3:00</div>
+      <div class="timer" id="timer">٣:٠٠</div>
       <div class="lbl" id="catLbl"></div>
     </div>
     <div class="row" style="gap:10px">
@@ -282,6 +282,7 @@ const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(
                set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const shuffle = a => {a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const pick = a => a[Math.floor(Math.random()*a.length)];
+const ar = n => String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
 const esc = s => s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ===== الأصوات (مولّدة، بدون ملفات) =====
@@ -328,7 +329,7 @@ function drawFx(){
   if(parts.length)requestAnimationFrame(drawFx);else{fxOn=false;fctx.clearRect(0,0,fx.width,fx.height)}
 }
 function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
-function plusOne(btn){const r=btn.getBoundingClientRect(),d=document.createElement('div');d.className='plus';d.textContent='+1';
+function plusOne(btn){const r=btn.getBoundingClientRect(),d=document.createElement('div');d.className='plus';d.textContent='+١';
   d.style.left=(r.left+r.width/2-16)+'px';d.style.top=(r.top-10)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
 
 let players = store.get('jalsa_players', []);
@@ -344,7 +345,7 @@ function renderPlayers(){
   $('chips').querySelectorAll('button').forEach(b=>b.onclick=()=>{players.splice(+b.dataset.i,1);save()});
   const ok = players.length>=3;
   $('toModes').disabled=!ok;
-  $('pHint').textContent = ok ? `${players.length} لاعبين جاهزين` : `تحتاجون ٣ لاعبين على الأقل (باقي ${3-players.length})`;
+  $('pHint').textContent = ok ? `${ar(players.length)} لاعبين جاهزين` : `تحتاجون ٣ لاعبين على الأقل (باقي ${ar(3-players.length)})`;
 }
 function save(){store.set('jalsa_players',players);renderPlayers()}
 $('addForm').onsubmit=e=>{e.preventDefault();const v=$('nameIn').value.trim();
@@ -374,7 +375,7 @@ function startSpy(){
 function showPass(){
   const p = round.order[round.idx];
   $('passName').textContent = players[p];
-  $('passCount').textContent = `${round.idx+1} من ${players.length}`;
+  $('passCount').textContent = `${ar(round.idx+1)} من ${ar(players.length)}`;
   go('s-pass');anim($('passBox'),'pop');
 }
 $('spyStart').onclick=startSpy;
@@ -390,7 +391,7 @@ $('reveal').onclick=()=>{
 $('hideWord').onclick=()=>{round.idx++; if(round.idx<players.length) showPass(); else startTalk()};
 
 let tLeft=talkSecs, tInt=null, tRun=false;
-function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function fmt(s){return ar(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'))}
 function tick(){$('timer').textContent=fmt(tLeft);$('timer').classList.toggle('low',tLeft<=30)}
 function stopTimer(){clearInterval(tInt);tInt=null;tRun=false}
 function runTimer(){stopTimer();tRun=true;$('tToggle').textContent='إيقاف';
@@ -440,7 +441,7 @@ $('whoNext').onclick=nextWho;
 let dareDeck=[], turn=-1;
 function renderScores(){
   const list = players.map(p=>[p,scores[p]||0]).sort((a,b)=>b[1]-a[1]);
-  $('scores').innerHTML = list.map(([p,s])=>`<div class="score"><span>${esc(p)}</span><b>${s}</b></div>`).join('');
+  $('scores').innerHTML = list.map(([p,s])=>`<div class="score"><span>${esc(p)}</span><b>${ar(s)}</b></div>`).join('');
 }
 function nextDare(){
   if(!dareDeck.length)dareDeck=shuffle(DARES);

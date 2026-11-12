@@ -1,4 +1,4 @@
-const CACHE='jalsa-v1';
+const CACHE='jalsa-v2';
 const FILES=['./','index.html','manifest.json','icons/icon-192.png','icons/icon-512.png',
  'fonts/tajawal-arabic-400-normal.woff2','fonts/tajawal-arabic-500-normal.woff2','fonts/tajawal-arabic-700-normal.woff2','fonts/tajawal-arabic-800-normal.woff2'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
