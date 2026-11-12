@@ -115,6 +115,8 @@
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .sound{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:14px;z-index:5;background:var(--card);border:1px solid var(--line);
     color:var(--text);width:44px;height:44px;border-radius:50%;font-size:20px}
+  .live{display:none;text-align:center;margin-top:18px;font-size:18px;color:var(--gold2);font-weight:700}
+  .live b{font-size:24px}
   .quit{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;z-index:5;background:var(--card);border:1px solid var(--line);
     color:var(--muted);height:44px;padding:0 16px;border-radius:999px;font-size:16px;display:none}
   .quit.on{display:block}
@@ -143,7 +145,8 @@
       <div class="hint" id="pHint"></div>
     </div>
     <button class="btn" id="toModes" disabled>يلا نلعب</button>
-    <p class="count" style="opacity:.6">نسخة ٦</p>
+    <div class="live" id="live"></div>
+    <p class="count" style="opacity:.6">نسخة ٧</p>
   </section>
 
   <!-- القائمة -->
@@ -615,6 +618,17 @@ class Timer{
   get running(){return !!this.int}
 }
 
+// ================= عدّاد الجولات (رقم واحد مشترك، بدون أي بيانات عن اللاعبين) =================
+const CNT='https://abacus.jasoncameron.dev', CNT_KEY='cumds-jalsa/rounds', CNT_MIN=20;
+function showCount(v){v=parseInt(v,10);if(!(v>=CNT_MIN))return;
+  let t;try{t=v.toLocaleString('ar-SA')}catch(e){t=ar(v)}
+  $('live').innerHTML=`🔥 انلعبت <b>${t}</b> جولة لين الحين`;$('live').style.display='block'}
+function cntFetch(path){try{const c=new AbortController();setTimeout(()=>c.abort(),5000);
+  return fetch(`${CNT}/${path}/${CNT_KEY}`,{signal:c.signal,cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status))}catch(e){return Promise.reject(e)}}
+function loadCount(){cntFetch('get').then(d=>showCount(d.value)).catch(()=>{})}
+function countRound(){cntFetch('hit').then(d=>showCount(d.value)).catch(e=>{if(e===404)cntFetch('create').catch(()=>{})})}
+loadCount();
+
 // ================= اللاعبين وسجل الليلة =================
 let players = store.get('jalsa_players', []);
 let tally = store.get('jalsa_tally', {});
@@ -632,6 +646,7 @@ $('addForm').onsubmit=e=>{e.preventDefault();const v=$('nameIn').value.trim();
   if(players.length>=16){modal('الحد ١٦ لاعب');return}
   players.push(v);$('nameIn').value='';savePlayers();$('nameIn').focus()};
 $('toModes').onclick=()=>go('s-modes');
+document.querySelectorAll('[data-go="s-home"]').forEach(b=>b.addEventListener('click',loadCount));
 renderPlayers();
 
 function renderTally(){
@@ -692,8 +707,8 @@ function showPass(){
   $('passCount').textContent=`${ar(round.idx+1)} من ${ar(players.length)}`;
   go('s-pass');anim($('passBox'),'pop');
 }
-$('spyStart').onclick=startSpy;
-$('spyAgain').onclick=startSpy;
+$('spyStart').onclick=()=>{countRound();startSpy()};
+$('spyAgain').onclick=()=>{countRound();startSpy()};
 $('reveal').onclick=()=>{
   const p=round.order[round.idx], isSpy=round.spies.includes(p);
   $('wordBox').innerHTML = isSpy
@@ -767,7 +782,7 @@ function renderPacks(){
 }
 document.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{packGame=b.dataset.pack;renderPacks();go('s-packs')});
 function deckFrom(g){const P=packsOf(g);return shuffle([...new Set(selPacks[g].flatMap(k=>P[k]))])}
-$('packsGo').onclick=()=>{if(packGame==='who'){whoDeck=deckFrom('who');nextWho();go('s-who')}else{dareDeck=deckFrom('dare');scores={};turn=Math.floor(Math.random()*players.length)-1;nextDare();go('s-dare')}};
+$('packsGo').onclick=()=>{countRound();if(packGame==='who'){whoDeck=deckFrom('who');nextWho();go('s-who')}else{dareDeck=deckFrom('dare');scores={};turn=Math.floor(Math.random()*players.length)-1;nextDare();go('s-dare')}};
 
 // مين فينا
 let whoDeck=[];
@@ -792,7 +807,7 @@ $('dareSkip').onclick=nextDare;
 let tlDeck=[], tlTurn=-1, tlScores={};
 function tlTopic(){if(!tlDeck.length)tlDeck=shuffle(TL_TOPICS);$('tlQ').textContent=tlDeck.pop();anim($('tlQ'),'flip')}
 function tlNext(){tlTurn=(tlTurn+1)%players.length;$('tlName').textContent=players[tlTurn];anim($('tlName'),'pop');tlTopic();scoreList('tlScores',tlScores)}
-$('startTL').onclick=()=>{tlScores={};tlTurn=Math.floor(Math.random()*players.length)-1;tlNext();go('s-tl')};
+$('startTL').onclick=()=>{countRound();tlScores={};tlTurn=Math.floor(Math.random()*players.length)-1;tlNext();go('s-tl')};
 $('tlFool').onclick=e=>{const p=players[tlTurn];tlScores[p]=(tlScores[p]||0)+1;award([p]);SFX.point();plusOne(e.currentTarget);tlNext()};
 $('tlCaught').onclick=()=>{SFX.bad();tlNext()};
 $('tlSkip').onclick=tlTopic;
@@ -829,7 +844,7 @@ function startMatch(){
   if(teamGame==='quiz'){match.deck=shuffle(QUIZ).slice(0,Math.min(12,QUIZ.length));nextQuiz();return}
   showTurn();
 }
-$('teamsGo').onclick=startMatch;
+$('teamsGo').onclick=()=>{countRound();startMatch()};
 $('matchAgain').onclick=()=>{splitTeams();renderTeams();go('s-teams')};
 
 function showTurn(){
