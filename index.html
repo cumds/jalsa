@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>الجلسة</title>
 <meta name="theme-color" content="#1a1410">
-<meta name="description" content="ألعاب جماعية للجلسات والاستراحات على جوال واحد: الدخيل، مين فينا، وتحدي">
+<meta name="description" content="ألعاب جماعية للجلسات والاستراحات على جوال واحد">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -19,7 +19,7 @@
   :root{
     --bg:#1a1410; --card:#271e17; --card2:#33271d; --line:#4a3a2b;
     --text:#f6ece0; --muted:#bfa98f; --gold:#e8b04b; --gold2:#f3c86e;
-    --red:#e2674f; --green:#6cbf84; --radius:20px;
+    --red:#e2674f; --green:#6cbf84; --blue:#6aa8d8; --radius:20px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Tajawal',system-ui,sans-serif;min-height:100%}
@@ -32,8 +32,10 @@
   h1{font-size:44px;font-weight:800;margin:8px 0 0;text-align:center;color:var(--gold)}
   .sub{text-align:center;color:var(--muted);margin:4px 0 24px;font-size:17px}
   h2{font-size:26px;font-weight:800;margin:4px 0 16px}
+  h3{font-size:19px;font-weight:700;margin:0 0 10px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
   .row{display:flex;gap:10px;align-items:center}
+  .row>.btn{flex:1}
   input[type=text]{flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);color:var(--text);
     font:inherit;font-size:18px;padding:14px 16px;border-radius:14px;outline:none}
   input[type=text]:focus{border-color:var(--gold)}
@@ -43,40 +45,65 @@
   .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
   .btn.red{background:var(--red);color:#fff}
   .btn.green{background:var(--green);color:#10281a}
+  .btn.small{padding:12px;font-size:17px}
   .btn:disabled{opacity:.4}
   .add{background:var(--gold);color:#2a1c0c;padding:14px 18px;font-size:18px}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
   .chip{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:8px;font-size:17px}
   .chip button{background:#4a3a2b;color:var(--muted);width:26px;height:26px;border-radius:50%;font-size:15px;line-height:1}
-  .hint{color:var(--muted);font-size:15px;margin-top:10px}
-  .modes{display:grid;gap:12px}
-  .mode{text-align:right;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;color:var(--text);display:flex;gap:14px;align-items:center}
+  .hint{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.6}
+  .modes{display:grid;gap:10px}
+  .mode{text-align:right;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;color:var(--text);display:flex;gap:14px;align-items:center;width:100%}
   .mode:active{border-color:var(--gold)}
-  .mode .ic{font-size:36px;width:56px;height:56px;display:grid;place-items:center;background:var(--card2);border-radius:16px;flex-shrink:0}
-  .mode b{font-size:21px;display:block}
-  .mode span{color:var(--muted);font-size:15px;font-weight:400}
+  .mode .ic{font-size:30px;width:52px;height:52px;display:grid;place-items:center;background:var(--card2);border-radius:16px;flex-shrink:0}
+  .mode b{font-size:20px;display:block}
+  .mode span{color:var(--muted);font-size:14px;font-weight:400;line-height:1.5}
+  .sec{color:var(--muted);font-size:15px;font-weight:700;margin:18px 4px 8px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .two .mode{flex-direction:column;text-align:center;gap:6px;padding:14px 8px}
   .back{background:none;color:var(--muted);font-size:16px;padding:6px 0;margin-bottom:6px}
   .cats{display:flex;flex-wrap:wrap;gap:8px}
   .cat{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 16px;border-radius:999px;font-size:17px;font-weight:500}
   .cat.sel{background:var(--gold);color:#2a1c0c;border-color:var(--gold)}
-  .big{min-height:52vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+  .cat:disabled{opacity:.35}
+  .big{min-height:48vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
     background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px 20px}
-  .big .lbl{color:var(--muted);font-size:18px}
-  .big .name{font-size:42px;font-weight:800;color:var(--gold);margin:8px 0}
-  .big .word{font-size:48px;font-weight:800;margin:10px 0}
+  .big .lbl{color:var(--muted);font-size:18px;line-height:1.6}
+  .big .name{font-size:40px;font-weight:800;color:var(--gold);margin:8px 0}
+  .big .word{font-size:46px;font-weight:800;margin:10px 0;line-height:1.3}
   .big .spy{font-size:40px;font-weight:800;color:var(--red);margin:10px 0}
-  .big .q{font-size:30px;font-weight:700;line-height:1.5}
-  .timer{font-size:72px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold2);margin:6px 0}
+  .big .q{font-size:28px;font-weight:700;line-height:1.5}
+  .taboo{margin-top:14px;display:grid;gap:6px;width:100%;max-width:260px}
+  .taboo div{background:rgba(226,103,79,.15);color:#f1a493;border-radius:10px;padding:8px;font-size:20px;font-weight:700;text-decoration:line-through;text-decoration-thickness:2px}
+  .timer{direction:ltr;unicode-bidi:isolate;font-size:68px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold2);margin:6px 0;line-height:1}
   .timer.low{color:var(--red)}
+  .timer.mini{font-size:40px}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .opt{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:14px;font-size:18px;border-radius:14px}
+  .opts.one{grid-template-columns:1fr}
+  .opt{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:14px;font-size:18px;border-radius:14px;line-height:1.4}
   .opt.right{background:var(--green);color:#10281a;border-color:var(--green)}
   .opt.wrong{background:var(--red);color:#fff;border-color:var(--red)}
+  .opt.picked{background:var(--gold);color:#2a1c0c;border-color:var(--gold)}
   .scores{display:grid;gap:8px}
-  .score{display:flex;justify-content:space-between;background:var(--card2);padding:10px 14px;border-radius:12px;font-size:17px}
+  .score{display:flex;justify-content:space-between;align-items:center;background:var(--card2);padding:10px 14px;border-radius:12px;font-size:17px}
   .score b{color:var(--gold)}
   .count{color:var(--muted);font-size:15px;text-align:center;margin-top:12px}
   .pill{display:inline-block;background:var(--card2);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:14px;margin-bottom:12px}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .team{background:var(--card);border:2px solid var(--line);border-radius:var(--radius);padding:14px}
+  .team.t0{border-color:var(--gold)} .team.t1{border-color:var(--blue)}
+  .team h3{text-align:center}
+  .team.t0 h3{color:var(--gold)} .team.t1 h3{color:var(--blue)}
+  .team div.m{background:var(--card2);border-radius:10px;padding:8px;margin-top:6px;text-align:center;font-size:17px}
+  .tscore{display:flex;justify-content:space-around;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px}
+  .tscore b{display:block;font-size:30px}
+  .tscore .c0{color:var(--gold)} .tscore .c1{color:var(--blue)}
+  .tscore .on{text-decoration:underline;text-underline-offset:6px}
+  .list{display:grid;gap:8px;margin-top:12px}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card2);border-radius:12px;padding:10px 14px;font-size:16px}
+  .item button{background:#4a3a2b;color:var(--muted);width:28px;height:28px;border-radius:50%;flex-shrink:0}
+  .medal{font-size:22px;margin-left:8px}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
   .modal.on{display:flex}
   .modal .card{max-width:420px;width:100%}
@@ -94,7 +121,7 @@
 </style>
 </head>
 <body>
-<button class="sound" id="snd" aria-label="الصوت">🔊</button>
+<button class="sound" id="snd" aria-label="الصوت" data-silent="1">🔊</button>
 <canvas id="fx"></canvas>
 <div class="wrap">
 
@@ -103,25 +130,37 @@
     <h1>الجلسة</h1>
     <p class="sub">ألعاب للاستراحة على جوال واحد</p>
     <div class="card">
-      <h2 style="font-size:21px;margin-bottom:12px">مين معك؟</h2>
+      <h3>مين معك؟</h3>
       <form class="row" id="addForm">
         <input type="text" id="nameIn" placeholder="اكتب اسم اللاعب" maxlength="16" autocomplete="off">
         <button class="add" type="submit">أضف</button>
       </form>
       <div class="chips" id="chips"></div>
-      <div class="hint" id="pHint">تحتاجون ٣ لاعبين على الأقل</div>
+      <div class="hint" id="pHint"></div>
     </div>
     <button class="btn" id="toModes" disabled>يلا نلعب</button>
   </section>
 
-  <!-- اختيار اللعبة -->
+  <!-- القائمة -->
   <section class="screen" id="s-modes">
     <button class="back" data-go="s-home">→ اللاعبين</button>
     <h2>وش نلعب؟</h2>
+    <div class="sec">كل واحد لحاله</div>
     <div class="modes">
       <button class="mode" data-go="s-spySetup"><div class="ic">🕵️</div><div><b>الدخيل</b><span>كلكم تعرفون الكلمة إلا واحد، اكشفوه قبل يكشفها</span></div></button>
-      <button class="mode" id="startWho"><div class="ic">👉</div><div><b>مين فينا؟</b><span>سؤال، وعلى ثلاثة الكل يأشر على واحد</span></div></button>
-      <button class="mode" id="startDare"><div class="ic">🔥</div><div><b>تحدي</b><span>تحديات عشوائية، نفّذ وخذ نقطة</span></div></button>
+      <button class="mode" data-pack="who"><div class="ic">👉</div><div><b>مين فينا؟</b><span>سؤال، وعلى ثلاثة الكل يأشر على واحد</span></div></button>
+      <button class="mode" data-pack="dare"><div class="ic">🔥</div><div><b>تحدي</b><span>تحديات بالدور، نفّذ وخذ نقطة</span></div></button>
+      <button class="mode" id="startTL"><div class="ic">🤥</div><div><b>صح ولا كذب؟</b><span>قل شي عن نفسك، وهم يخمّنون صدقت ولا لا</span></div></button>
+    </div>
+    <div class="sec">فريقين</div>
+    <div class="modes">
+      <button class="mode" data-team="taboo"><div class="ic">🤐</div><div><b>ولا كلمة</b><span>اشرح الكلمة بدون الكلمات الممنوعة</span></div></button>
+      <button class="mode" data-team="act"><div class="ic">🎭</div><div><b>مثّلها</b><span>مثّل بدون صوت، وفريقك يخمّن</span></div></button>
+      <button class="mode" data-team="quiz"><div class="ic">🏆</div><div><b>تحدي الفرق</b><span>أسئلة عن السعودية، مين يعرف أكثر؟</span></div></button>
+    </div>
+    <div class="two">
+      <button class="mode" data-go="s-custom"><div class="ic">✍️</div><b>كلماتكم</b><span>أضيفوا كلماتكم وأسئلتكم</span></button>
+      <button class="mode" id="toTally"><div class="ic">🥇</div><b>سجل الليلة</b><span>مين فاز أكثر</span></button>
     </div>
   </section>
 
@@ -129,23 +168,16 @@
   <section class="screen" id="s-spySetup">
     <button class="back" data-go="s-modes">→ الألعاب</button>
     <h2>الدخيل</h2>
-    <div class="card">
-      <div style="font-weight:700;margin-bottom:10px">اختاروا الفئة</div>
-      <div class="cats" id="cats"></div>
-    </div>
-    <div class="card">
-      <div style="font-weight:700;margin-bottom:10px">وقت النقاش</div>
-      <div class="cats" id="times"></div>
-    </div>
-    <div class="card" style="color:var(--muted);font-size:16px;line-height:1.7">
-      كل واحد يشوف الكلمة بدوره ويمرر الجوال. واحد منكم "دخيل" ما يعرفها.
-      تسألون بعض أسئلة عن الكلمة بدون ما تقولونها، وبعدين تصوتون مين الدخيل.
-      إذا انكشف، عنده فرصة يخمّن الكلمة ويفوز.
+    <div class="card"><h3>الفئة</h3><div class="cats" id="cats"></div></div>
+    <div class="card"><h3>عدد الدخلاء</h3><div class="cats" id="spyN"></div><div class="hint" id="spyNHint"></div></div>
+    <div class="card"><h3>وقت النقاش</h3><div class="cats" id="times"></div></div>
+    <div class="card hint" style="margin-top:0">
+      كل واحد يشوف الكلمة بدوره ويمرر الجوال. الدخيل ما يعرفها.
+      تسألون بعض عن الكلمة بدون ما تقولونها، وبعدين تصوتون. إذا انكشف الدخيل، عنده فرصة يخمّن الكلمة ويفوز.
     </div>
     <button class="btn" id="spyStart">ابدأ الجولة</button>
   </section>
 
-  <!-- الدخيل: تمرير -->
   <section class="screen" id="s-pass">
     <div class="big" id="passBox">
       <div class="lbl">مرّر الجوال لـ</div>
@@ -156,39 +188,44 @@
     <div class="count" id="passCount"></div>
   </section>
 
-  <!-- الدخيل: الكلمة -->
   <section class="screen" id="s-word">
     <div class="big" id="wordBox"></div>
     <button class="btn" id="hideWord">تمام، خبّها</button>
   </section>
 
-  <!-- الدخيل: النقاش -->
   <section class="screen" id="s-talk">
     <div class="big">
       <div class="lbl">يبدأ بالسؤال</div>
       <div class="name" id="starter"></div>
-      <div class="timer" id="timer">٣:٠٠</div>
+      <div class="timer" id="timer"></div>
       <div class="lbl" id="catLbl"></div>
     </div>
-    <div class="row" style="gap:10px">
-      <button class="btn ghost" id="tToggle" style="flex:1">إيقاف</button>
+    <div class="row">
+      <button class="btn ghost" id="tToggle">إيقاف</button>
       <button class="btn" id="toVote" style="flex:2">صوّتوا واكشفوا</button>
     </div>
   </section>
 
-  <!-- الدخيل: التصويت -->
   <section class="screen" id="s-vote">
-    <h2>مين الدخيل برأيكم؟</h2>
-    <p class="hint" style="margin-top:-8px;margin-bottom:14px">تناقشوا واختاروا واحد بالأغلبية</p>
-    <div class="scores" id="voteList"></div>
+    <h2 id="voteTitle">مين الدخيل برأيكم؟</h2>
+    <p class="hint" id="voteHint" style="margin-top:-8px;margin-bottom:14px"></p>
+    <div class="opts one" id="voteList"></div>
+    <button class="btn" id="voteGo" style="display:none">اكشف</button>
   </section>
 
-  <!-- الدخيل: النتيجة -->
   <section class="screen" id="s-result">
     <div class="big" id="resultBox" style="min-height:auto"></div>
     <div id="guessArea"></div>
     <button class="btn" id="spyAgain">جولة جديدة</button>
     <button class="btn ghost" data-go="s-modes">لعبة ثانية</button>
+  </section>
+
+  <!-- اختيار الحزم -->
+  <section class="screen" id="s-packs">
+    <button class="back" data-go="s-modes">→ الألعاب</button>
+    <h2 id="packsTitle"></h2>
+    <div class="card"><h3>اختاروا الحزم</h3><div class="cats" id="packs"></div><div class="hint" id="packsHint"></div></div>
+    <button class="btn" id="packsGo">ابدأ</button>
   </section>
 
   <!-- مين فينا -->
@@ -204,25 +241,120 @@
   <!-- تحدي -->
   <section class="screen" id="s-dare">
     <button class="back" data-go="s-modes">→ الألعاب</button>
-    <div class="big" style="min-height:40vh">
+    <div class="big" style="min-height:38vh">
       <div class="lbl">الدور على</div>
       <div class="name" id="dareName"></div>
-      <div class="q" id="dareQ" style="font-size:25px"></div>
+      <div class="q" id="dareQ" style="font-size:24px"></div>
     </div>
     <div class="row">
-      <button class="btn green" id="dareDone" style="flex:1">نفّذ ✓</button>
-      <button class="btn red" id="dareSkip" style="flex:1">انسحب</button>
+      <button class="btn green" id="dareDone" data-silent="1">نفّذ ✓</button>
+      <button class="btn red" id="dareSkip">انسحب</button>
     </div>
-    <div class="card" style="margin-top:16px">
-      <div style="font-weight:700;margin-bottom:10px">النقاط</div>
-      <div class="scores" id="scores"></div>
+    <div class="card" style="margin-top:16px"><h3>النقاط</h3><div class="scores" id="scores"></div></div>
+  </section>
+
+  <!-- صح ولا كذب -->
+  <section class="screen" id="s-tl">
+    <button class="back" data-go="s-modes">→ الألعاب</button>
+    <div class="big" style="min-height:38vh">
+      <div class="lbl">الدور على</div>
+      <div class="name" id="tlName"></div>
+      <div class="q" id="tlQ" style="font-size:24px"></div>
+      <div class="lbl" style="margin-top:12px;font-size:15px">قلها صدق أو كذب، والباقين يصوتون. بعدها اعترف 😏</div>
     </div>
+    <div class="row">
+      <button class="btn green" id="tlFool" data-silent="1">انخدعوا 😎</button>
+      <button class="btn red" id="tlCaught">كشفوني</button>
+    </div>
+    <button class="btn ghost small" id="tlSkip">موضوع ثاني</button>
+    <div class="card" style="margin-top:16px"><h3>النقاط</h3><div class="scores" id="tlScores"></div></div>
+  </section>
+
+  <!-- الفرق -->
+  <section class="screen" id="s-teams">
+    <button class="back" data-go="s-modes">→ الألعاب</button>
+    <h2 id="teamsTitle"></h2>
+    <div class="teams" id="teamsBox"></div>
+    <button class="btn ghost" id="shuffleTeams">🔀 خلط الفرق</button>
+    <div class="card" style="margin-top:14px" id="roundsCard"><h3>عدد الجولات لكل فريق</h3><div class="cats" id="roundsSel"></div></div>
+    <p class="hint" id="teamsHint"></p>
+    <button class="btn" id="teamsGo">ابدأ</button>
+  </section>
+
+  <section class="screen" id="s-turn">
+    <div class="tscore" id="tsTurn"></div>
+    <div class="big" style="min-height:40vh">
+      <div class="lbl" id="turnTeam"></div>
+      <div class="name" id="turnName"></div>
+      <div class="lbl" id="turnHint"></div>
+    </div>
+    <button class="btn" id="turnGo">جاهز؟ ابدأ</button>
+  </section>
+
+  <section class="screen" id="s-play">
+    <div class="bar"><div class="timer mini" id="pTimer"></div><div class="pill" id="pCount" style="margin:0"></div></div>
+    <div class="big" id="pCard" style="min-height:42vh"></div>
+    <div class="row">
+      <button class="btn green" id="pOk" data-silent="1">صح ✓</button>
+      <button class="btn ghost" id="pSkip">تخطّي</button>
+    </div>
+    <button class="btn red small" id="pFoul">قال كلمة ممنوعة ✗</button>
+  </section>
+
+  <section class="screen" id="s-turnEnd">
+    <div class="big" id="turnEndBox" style="min-height:30vh"></div>
+    <div class="tscore" id="tsEnd" style="margin-top:12px"></div>
+    <button class="btn" id="nextTurn">الدور اللي بعده</button>
+  </section>
+
+  <section class="screen" id="s-quiz">
+    <div class="tscore" id="tsQuiz"></div>
+    <div class="card">
+      <div class="pill" id="qMeta"></div>
+      <div style="font-size:23px;font-weight:700;line-height:1.5" id="qText"></div>
+      <div class="opts one" id="qOpts"></div>
+    </div>
+    <button class="btn" id="qNext" style="display:none">اللي بعده</button>
+  </section>
+
+  <section class="screen" id="s-match">
+    <div class="big" id="matchBox" style="min-height:auto"></div>
+    <div class="tscore" id="tsMatch" style="margin-top:12px"></div>
+    <button class="btn" id="matchAgain">مباراة ثانية</button>
+    <button class="btn ghost" data-go="s-modes">لعبة ثانية</button>
+  </section>
+
+  <!-- كلماتكم -->
+  <section class="screen" id="s-custom">
+    <button class="back" data-go="s-modes">→ الألعاب</button>
+    <h2>كلماتكم</h2>
+    <div class="cats" id="cTabs" style="margin-bottom:14px"></div>
+    <div class="card">
+      <form class="row" id="cForm">
+        <input type="text" id="cIn" maxlength="80" autocomplete="off">
+        <button class="add" type="submit">أضف</button>
+      </form>
+      <div class="hint" id="cHint"></div>
+      <div class="list" id="cList"></div>
+    </div>
+    <p class="hint">تنحفظ على جوالك بس، وما تطلع لأحد.</p>
+  </section>
+
+  <!-- سجل الليلة -->
+  <section class="screen" id="s-tally">
+    <button class="back" data-go="s-modes">→ الألعاب</button>
+    <h2>سجل الليلة 🥇</h2>
+    <p class="hint" style="margin-top:-8px">كل فوز في أي لعبة ينحسب هنا</p>
+    <div class="scores" id="tallyList"></div>
+    <button class="btn ghost" id="tallyReset">ابدأ ليلة جديدة</button>
   </section>
 </div>
 
-<div class="modal" id="modal"><div class="card"><div id="modalTxt" style="font-size:19px;line-height:1.6"></div><button class="btn" id="modalOk">تمام</button></div></div>
+<div class="modal" id="modal"><div class="card"><div id="modalTxt" style="font-size:19px;line-height:1.6"></div>
+  <div class="row"><button class="btn ghost" id="modalNo" style="display:none">لا</button><button class="btn" id="modalOk">تمام</button></div></div></div>
 
 <script>
+// ================= المحتوى =================
 const CATS = {
   "أكلات": ["كبسة","مندي","جريش","مرقوق","قرصان","معصوب","مطبق","سليق","حنيذ","مضغوط","كليجا","لقيمات","سمبوسة","شاورما","برجر","مطازيز","فول","تميس"],
   "أماكن": ["المطار","المستشفى","الاستراحة","البر","المدرسة","المول","البحر","الحلاق","مغسلة السيارات","محطة البنزين","الملعب","السينما","الجامعة","البقالة","الفندق","المطعم","الحديقة","الصيدلية"],
@@ -234,10 +366,13 @@ const CATS = {
   "ملابس": ["ثوب","شماغ","عقال","بشت","عباية","طاقية","فروة","شبشب","جزمة رياضية","بيجامة","جاكيت","شراب","ساعة يد","نظارة شمسية","كاب","حزام","فستان","معطف"],
   "رمضان والعيد": ["فانوس","سحور","فطور","تراويح","مدفع رمضان","عيدية","حلاوة العيد","تمر","شوربة","قطايف","صلاة العيد","ثوب جديد","زكاة الفطر","هلال","مسحراتي","سفرة","لقيمات","قرقيعان"],
   "مدن ومناطق": ["الرياض","جدة","مكة","المدينة","الدمام","أبها","تبوك","حائل","الطائف","العلا","جازان","نجران","القصيم","الأحساء","ينبع","الباحة","الجوف","الخبر"],
-  "سفر": ["جواز السفر","تذكرة","شنطة","بوردنق","فندق","تاكسي","شاحن متنقل","مخدة الرقبة","خريطة","كاميرا","صرّاف","تأشيرة","مطار","طيارة","قطار","كروز","تأخير الرحلة","سوق حرة"]
+  "سفر": ["جواز السفر","تذكرة","شنطة","بوردنق","فندق","تاكسي","شاحن متنقل","مخدة الرقبة","خريطة","كاميرا","صرّاف","تأشيرة","مطار","طيارة","قطار","كروز","تأخير الرحلة","سوق حرة"],
+  "اليوم الوطني": ["العلم","العرضة","السيف","النخلة","الألعاب النارية","الشماغ","الصقر","الدرعية","الوشاح الأخضر","المسيرة","الأناشيد","الزينة","الكورنيش","الخيل","الدلة","البشت"],
+  "كورة": ["حارس","هدف","ركلة جزاء","تسلل","حكم","كرت أصفر","ركنية","ملعب","مدرج","صافرة","كأس","مدرب","دكة الاحتياط","تمريرة","ضربة حرة","شباك","قميص","الشوط الثاني"]
 };
-const WHO = [
-  "مين فينا أكثر واحد ينام بالجلسة؟","مين فينا يتأخر دايم ويقول «وصلت» وهو في البيت؟","مين فينا لو صار مليونير أول شي يشتري سيارة؟",
+
+const WHO = {
+  "عام": ["مين فينا أكثر واحد ينام بالجلسة؟","مين فينا يتأخر دايم ويقول «وصلت» وهو في البيت؟","مين فينا لو صار مليونير أول شي يشتري سيارة؟",
   "مين فينا أكثر واحد يأكل؟","مين فينا يضيع جواله وهو بيده؟","مين فينا أفضل واحد يطبخ؟","مين فينا يقدر يعيش أسبوع في البر بدون جوال؟",
   "مين فينا أكثر واحد يضحك على نكته قبل يكملها؟","مين فينا يصير مشهور بالسوشال؟","مين فينا ينسى المواعيد؟",
   "مين فينا أكثر واحد يحب يتمشرق؟","مين فينا ما يقدر يمسك سر؟","مين فينا أكثر واحد يتهاوش مع الـ GPS؟",
@@ -253,10 +388,28 @@ const WHO = [
   "مين فينا يشرب قهوة أكثر؟","مين فينا يقدر يعيش بدون سكر شهر؟","مين فينا أكثر واحد صبور؟","مين فينا يحب يرتب كل شي؟",
   "مين فينا يقدر يتكلم ساعة بدون ما يوقف؟","مين فينا أكثر واحد كريم؟","مين فينا يخسر في الألعاب ويزعل؟","مين فينا عنده أغرب هواية؟",
   "مين فينا لو صار وزير يغيّر كل شي؟","مين فينا يخاف من الطيارة؟","مين فينا أكثر واحد يحب الحيوانات؟","مين فينا يجيب الهدايا الأحلى؟",
-  "مين فينا يقدر يطبخ وليمة لحاله؟","مين فينا يعرف يفاوض على الأسعار؟"
-];
-const DARES = [
-  "قلّد صوت واحد من الموجودين لين يعرفونه","تكلم بالفصحى لين يجي دورك مرة ثانية","قل ٥ أكلات تبدأ بحرف الميم في ١٠ ثواني",
+  "مين فينا يقدر يطبخ وليمة لحاله؟","مين فينا يعرف يفاوض على الأسعار؟"],
+  "عائلة": ["مين فينا أكثر واحد يحب الآيسكريم؟","مين فينا يرتب غرفته دايم؟","مين فينا أشطر واحد في الرسم؟","مين فينا يصحى أول واحد في البيت؟",
+  "مين فينا يضحك بصوت عالي؟","مين فينا يحكي أحلى قصص؟","مين فينا يحب الشوكولاتة أكثر؟","مين فينا أسرع واحد يلبس؟",
+  "مين فينا يساعد في المطبخ؟","مين فينا يحب الألعاب أكثر؟","مين فينا يعرف ينكّت؟","مين فينا أكثر واحد يحب المدرسة؟",
+  "مين فينا يحب الحيوانات الأليفة؟","مين فينا أكثر واحد يسأل أسئلة؟","مين فينا يقدر يقعد ساكت دقيقة كاملة؟"],
+  "شباب": ["مين فينا يقول «جاي» وهو ما طلع من البيت؟","مين فينا يقعد نص ساعة يختار مطعم ويطلب نفس طلبه؟","مين فينا يتحمس للنادي أسبوع ويوقف؟",
+  "مين فينا يحب التطعيس؟","مين فينا أكثر واحد يلعب بلايستيشن؟","مين فينا يتعصب على الكورة؟","مين فينا يغسل سيارته كل يوم؟",
+  "مين فينا ينام في الاستراحة قبل الكل؟","مين فينا يحب الشوي ويسويه؟","مين فينا يضيع أغراضه في الكشتة؟","مين فينا يعرف كل أنواع السيارات؟",
+  "مين فينا يحجز الكنب أول ما يوصل؟"],
+  "بنات": ["مين فينا تجرب كل وصفة تشوفها؟","مين فينا تنسى جوالها على الصامت؟","مين فينا تحب ترتب الجمعات؟","مين فينا تقعد ساعة تختار صورة؟",
+  "مين فينا أكثر وحدة تحب القهوة المختصة؟","مين فينا تحب تنظّم الأغراض؟","مين فينا تعرف كل أخبار العايلة؟","مين فينا تحب الرحلات؟",
+  "مين فينا تضحك على أي شي؟","مين فينا تحب تجرب مطاعم جديدة؟","مين فينا أكثر وحدة تحب القراءة؟","مين فينا تنسى تاكل لما تنشغل؟"],
+  "رمضان": ["مين فينا ينام بعد السحور على طول؟","مين فينا أول واحد يمد يده على التمر؟","مين فينا يعصّب قبل المغرب؟","مين فينا ياكل سمبوسة أكثر؟",
+  "مين فينا يسهر لين الفجر؟","مين فينا يجهّز السفرة؟","مين فينا ما يطبخ إلا في رمضان؟","مين فينا يشتري كل شي في السوق قبل الفطور؟",
+  "مين فينا ينام العصر ويصحى على الأذان؟","مين فينا أكثر واحد يحب القطايف؟"],
+  "اليوم الوطني": ["مين فينا يلبس أخضر كامل في اليوم الوطني؟","مين فينا يزيّن سيارته؟","مين فينا يعرف تاريخ المملكة أكثر؟",
+  "مين فينا يطلع يشوف الألعاب النارية؟","مين فينا يرفع العلم في البيت؟","مين فينا يعرف كل مناطق المملكة؟","مين فينا يرقص العرضة أحسن؟",
+  "مين فينا يحفظ أكثر أناشيد وطنية؟"]
+};
+
+const DARES = {
+  "عام": ["قلّد صوت واحد من الموجودين لين يعرفونه","تكلم بالفصحى لين يجي دورك مرة ثانية","قل ٥ أكلات تبدأ بحرف الميم في ١٠ ثواني",
   "قل نكتة، إذا ما ضحك أحد ما تاخذ النقطة","مثّل مشهد واحد ينتظر الكبسة وهي ما استوت","عدّ من ١ إلى ٢٠ بالعكس بأسرع وقت",
   "قل اسم كل واحد في الجلسة مع صفة حلوة فيه","سوّ إعلان تجاري لكوب الشاي اللي قدامك","تكلم ٣٠ ثانية عن الطماطم بدون ما توقف",
   "قل ٣ دول تبدأ بحرف السين في ١٠ ثواني","مثّل إنك معلق رياضي على أحد يصب قهوة","قلّد طريقة مشي واحد من الموجودين",
@@ -271,21 +424,94 @@ const DARES = [
   "مثّل موقف واحد يحاول يصحى بدري للدوام","صف المكان اللي أنتم فيه كأنك تبيعه","قل اسم ٤ لاعبين كورة سعوديين في ١٠ ثواني",
   "اختر واحد من الموجودين وقل أحلى موقف صار بينكم","تكلم ٢٠ ثانية بدون ما تقول «يعني»","مثّل إنك تطلب من مطعم ومحد فاهمك",
   "اذكر ٥ أكلات ما تحبها وليش في ٢٠ ثانية","قل ٦ كلمات تنتهي بحرف التاء","مثّل إنك جدّ يعطي نصيحة للشباب",
-  "قل اسم كل شخص في الجلسة بالعكس من آخر حرف","اذكر ٤ رياضات تبدأ بحرف الكاف أو القاف","سوّ تحية عسكرية وقل خطاب حماسي قصير عن الشاي",
+  "قل اسم كل شخص في الجلسة بالعكس من آخر حرف","اذكر ٤ رياضات تبدأ بحرف الكاف أو القاف","سوّ خطاب حماسي قصير عن الشاي",
   "قلّد مقدم برامج مسابقات وأنت تسأل اللي جنبك سؤال","اكتب اسمك في الهوا بإصبع رجلك","مثّل إنك تحاول تفتح علبة مخللات قوية",
   "قل ٣ أشياء تسويها لو كان عندك يوم إجازة زيادة","اذكر ٥ أشياء تلقاها في البقالة في ٦ ثواني","قل نشرة أخبار عن آخر شي صار في الجلسة",
-  "قل قصة قصيرة كل كلمة فيها تبدأ بحرف مختلف","اضحك ضحكة شريرة ١٠ ثواني"
+  "قل قصة قصيرة كل كلمة فيها تبدأ بحرف مختلف","اضحك ضحكة شريرة ١٠ ثواني"],
+  "عائلة": ["قلّد صوت حيوان والكل يخمن","امشِ مثل البطريق لين الباب وارجع","قل ٣ ألوان تشوفها حولك","سوّ صوت قطار ١٠ ثواني",
+  "قل اسم ٥ فواكه بسرعة","قف مثل التمثال ١٠ ثواني بدون حركة","قل كلمة حلوة للي جنبك","نط ٥ نطات وأنت تعد",
+  "قلّد صوت سيارة إسعاف","عدّ لين ١٠ بالإنجليزي","صفّق ٣ مرات وقل اسمك بالعكس","ارسم بإصبعك قلب في الهوا","مثّل إنك تاكل ليمونة حامضة",
+  "قل ٣ أشياء تحبها في بيتكم"],
+  "رمضان": ["قل ٥ أكلات تنحط على سفرة الفطور","مثّل واحد ينتظر الأذان","قلّد المسحراتي","قل ٣ أشياء تحبها في رمضان",
+  "مثّل واحد صحى متأخر على السحور","اذكر ٤ أنواع شوربة","وصّف سفرة فطوركم في ١٥ ثانية","اذكر ٥ حلويات رمضانية في ١٠ ثواني"]
+};
+
+const TL_TOPICS = ["قل شي صار لك في السفر","أغرب أكلة أكلتها","موقف محرج صار لك في المدرسة","شي تعلمته لحالك","أغرب حلم حلمته",
+  "مكان زرته وما نسيته","شي كسرته وأنت صغير","أول جوال كان عندك","موهبة عندك ما يعرفونها","شي تخاف منه","أكثر شي صرفت عليه فلوس",
+  "مشهور قابلته أو شفته","حيوان ربيته","رياضة جربتها","أطول مدة نمت فيها","شي سويته لأول مرة هالسنة","أكلة تعرف تطبخها",
+  "أغرب هدية جتك","مقلب سويته في أحد","شي تجمعه","مسابقة فزت فيها","أبعد مكان سافرت له","شي ما يعرفه عنك أحد هنا",
+  "موقف ضحكت فيه لين بكيت","شي ضيعته ولقيته بعد مدة طويلة"];
+
+const TABOO = [
+  ["كبسة","رز","دجاج","غدا"],["قهوة","دلة","فنجال","تمر"],["جمل","صحراء","سنام","ناقة"],["مطار","طيارة","سفر","رحلة"],
+  ["مدرسة","معلم","طلاب","فصل"],["بحر","ماء","سمك","شاطئ"],["جوال","اتصال","شاشة","آيفون"],["شمس","حرارة","نهار","صيف"],
+  ["مكيف","بارد","تبريد","حر"],["مستشفى","طبيب","مريض","علاج"],["عيد","فرحة","عيدية","رمضان"],["مطر","غيم","سحاب","ماء"],
+  ["كورة","مباراة","لاعب","هدف"],["سيارة","سواقة","كفر","طريق"],["خيمة","بر","كشتة","نار"],["ساعة","وقت","يد","دقيقة"],
+  ["تمر","نخلة","رطب","قهوة"],["صقر","طير","قنص","صيد"],["كتاب","قراءة","صفحات","مكتبة"],["مفتاح","باب","قفل","فتح"],
+  ["عرس","زواج","عريس","حفلة"],["نوم","سرير","مخدة","تعب"],["حلاق","شعر","مقص","دقن"],["ثلاجة","بارد","أكل","مطبخ"],
+  ["بنزين","سيارة","محطة","وقود"],["ثوب","أبيض","لبس","شماغ"],["شاي","كوب","سكر","نعناع"],["دراجة","عجل","سيكل","ركوب"],
+  ["مطعم","أكل","طلب","جرسون"],["قمر","ليل","نجوم","بدر"],["تلفزيون","شاشة","قناة","ريموت"],["سوق","شراء","محلات","بيع"],
+  ["مسبح","سباحة","ماء","غوص"],["حديقة","أشجار","ورد","لعب"],["طباخ","أكل","مطبخ","طبخ"],["شرطي","أمن","مخالفة","قانون"],
+  ["كاميرا","صورة","تصوير","لقطة"],["بطيخ","أحمر","أخضر","فاكهة"],["مظلة","مطر","شمسية","ظل"],["عصفور","طير","ريش","يغرد"],
+  ["مبخرة","عود","بخور","دخان"],["فندق","غرفة","سفر","حجز"],["عطر","ريحة","رش","بخاخ"],["مصعد","دور","درج","زر"],["نظارة","عيون","نظر","عدسات"]
 ];
 
+const ACT = ["يطبخ كبسة","يسوق في زحمة","يصب قهوة","يصطاد سمك","يلعب بلوت","يغيّر كفر","يصوّر سيلفي","يركب جمل","ينام في الدوام",
+  "يلعب كورة","يحلق دقنه","يكوي ثوب","يصلّح مكيف","يسبح","يطيّر طيارة ورقية","يشوي لحم","يذاكر ليلة الاختبار","يدق الباب",
+  "يرد على الجوال","يتمرن في النادي","يركض ورا الباص","يشرب شاي حار","يفتح هدية","يرقص العرضة","يقرأ جريدة","يصيد بالصقر",
+  "يغسل سيارة","يرتب شنطة سفر","يعطس","يلعب بلايستيشن","يخبز خبز","يعلق في المصعد","يمشي على رمل حار","يدرّس طلاب",
+  "يخاف من صرصور","ينصب خيمة","ينظّف البيت","يطلع الدرج تعبان","يشجّع فريقه","يركب دراجة","يدوّر مفاتيحه","ينفخ بالون",
+  "يحلب ناقة","يتسوق في المول","يسوق سيارة تطعيس","يأذّن","يربط شماغه","يضيّف ضيوف"];
+
+const QUIZ = [
+  ["ما هي عاصمة المملكة العربية السعودية؟","الرياض",["جدة","مكة","الدمام"]],
+  ["اليوم الوطني السعودي يوافق؟","٢٣ سبتمبر",["٢٢ فبراير","١ يناير","١٥ مارس"]],
+  ["يوم التأسيس يوافق؟","٢٢ فبراير",["٢٣ سبتمبر","١٠ مايو","٣٠ نوفمبر"]],
+  ["كم هللة في الريال؟","١٠٠",["٢٠","٥٠","١٠"]],
+  ["كم قرش في الريال؟","٢٠",["١٠","٥٠","١٠٠"]],
+  ["أكبر صحراء في السعودية؟","الربع الخالي",["النفود","الدهناء","صحراء الجافورة"]],
+  ["أي مدينة تُلقّب بعروس البحر الأحمر؟","جدة",["ينبع","جازان","الوجه"]],
+  ["موقع الحِجر (مدائن صالح) في؟","العلا",["تبوك","حائل","نجران"]],
+  ["الطائف مشهورة بـ؟","الورد",["الرز","النفط","اللؤلؤ"]],
+  ["أبها هي مقر منطقة؟","عسير",["الباحة","جازان","نجران"]],
+  ["المسجد النبوي في مدينة؟","المدينة المنورة",["مكة المكرمة","الطائف","ينبع"]],
+  ["شعار المملكة يتكون من نخلة و؟","سيفين متقاطعين",["صقر","هلال","نجمة"]],
+  ["كم عدد المناطق الإدارية في السعودية؟","١٣",["١٠","١٥","١٢"]],
+  ["البحر اللي على الساحل الشرقي للمملكة؟","الخليج العربي",["البحر الأحمر","بحر العرب","البحر المتوسط"]],
+  ["البحر اللي على الساحل الغربي للمملكة؟","البحر الأحمر",["الخليج العربي","بحر العرب","البحر الأسود"]],
+  ["مدينة الخبر تتبع أي منطقة؟","المنطقة الشرقية",["منطقة الرياض","منطقة القصيم","منطقة الجوف"]],
+  ["أي حيوان يُلقّب بسفينة الصحراء؟","الجمل",["الحصان","الضب","الغزال"]],
+  ["أي طير مشهور في رياضة القنص؟","الصقر",["النسر","الحمام","البوم"]],
+  ["مشروع نيوم يقع في منطقة؟","تبوك",["الرياض","جازان","الشرقية"]],
+  ["جسر الملك فهد يربط السعودية بـ؟","البحرين",["قطر","الكويت","الإمارات"]],
+  ["مفتاح الاتصال الدولي للسعودية؟","+966",["+971","+965","+973"]],
+  ["حاتم الطائي المشهور بالكرم ينتسب لمنطقة؟","حائل",["عسير","القصيم","تبوك"]],
+  ["الدرعية كانت عاصمة الدولة السعودية؟","الأولى",["الثانية","الثالثة","الرابعة"]],
+  ["ولد الناقة الصغير يسمى؟","حُوار",["مهر","جرو","شبل"]],
+  ["لون علم المملكة الأساسي؟","الأخضر",["الأحمر","الأزرق","الأسود"]],
+  ["أول مسجد بني في الإسلام؟","مسجد قباء",["المسجد الحرام","المسجد النبوي","المسجد الأقصى"]],
+  ["العرضة السعودية هي؟","رقصة شعبية بالسيوف والطبول",["أكلة شعبية","نوع من الخيام","لعبة ورق"]],
+  ["العملة الرسمية في السعودية؟","الريال",["الدينار","الدرهم","الجنيه"]],
+  ["أكبر مدينة سعودية من حيث عدد السكان؟","الرياض",["جدة","مكة","الدمام"]],
+  ["الأحساء مشهورة بـ؟","واحات النخيل",["الثلوج","الغابات","الأنهار"]],
+  ["الكعبة المشرفة في مدينة؟","مكة المكرمة",["المدينة المنورة","جدة","الطائف"]],
+  ["بريدة مشهورة بمهرجان؟","التمور",["الورد","العسل","الكتاب"]],
+  ["\"المفطّح\" عبارة عن؟","ذبيحة كاملة على رز",["حلا بالتمر","خبز محشي","شوربة"]],
+  ["الدلة تستخدم لـ؟","صب القهوة",["طبخ الرز","حفظ الماء","البخور"]],
+  ["المبخرة تستخدم لـ؟","العود والبخور",["القهوة","الشاي","الطبخ"]]
+];
+
+// ================= أدوات =================
 const $ = id => document.getElementById(id);
 const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
                set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const shuffle = a => {a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const ar = n => String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const esc = s => s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function anim(el,c){if(!el)return;el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
 
-// ===== الأصوات (مولّدة، بدون ملفات) =====
+// ================= الصوت =================
 let soundOn = store.get('jalsa_sound', true), actx=null;
 function ac(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(actx&&actx.state==='suspended')actx.resume().catch(()=>{});return actx}
 function tone(f,d=.12,type='sine',v=.18,when=0,slide=0){
@@ -299,26 +525,27 @@ const SFX={
   reveal:()=>{tone(440,.12,'sine',.18);tone(660,.18,'sine',.18,.1)},
   spy:()=>{tone(300,.25,'sawtooth',.12,0,150);tone(220,.35,'sawtooth',.1,.2,110)},
   tick:()=>tone(900,.05,'square',.08),
-  end:()=>{tone(400,.4,'square',.12,0,200)},
-  win:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.18,i*.11))},
-  lose:()=>{[392,330,262].forEach((f,i)=>tone(f,.28,'sine',.16,i*.16))},
+  end:()=>tone(400,.4,'square',.12,0,200),
+  win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.18,i*.11)),
+  lose:()=>[392,330,262].forEach((f,i)=>tone(f,.28,'sine',.16,i*.16)),
   point:()=>{tone(880,.1,'triangle',.15);tone(1320,.15,'triangle',.15,.08)},
+  bad:()=>tone(180,.25,'sawtooth',.12),
   whoosh:()=>tone(200,.18,'sine',.1,0,700)
 };
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 function renderSnd(){$('snd').textContent=soundOn?'🔊':'🔇'}
 $('snd').onclick=()=>{soundOn=!soundOn;store.set('jalsa_sound',soundOn);renderSnd();SFX.tap()};
 renderSnd();
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.dataset.silent&&b.id!=='snd')SFX.tap()},true);
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.dataset.silent)SFX.tap()},true);
 
-// ===== احتفال =====
+// ================= الاحتفال =================
 const fx=$('fx'),fctx=fx.getContext('2d');let parts=[],fxOn=false;
 function sizeFx(){fx.width=innerWidth*devicePixelRatio;fx.height=innerHeight*devicePixelRatio}
 addEventListener('resize',sizeFx);sizeFx();
 function confetti(){
-  const cols=['#e8b04b','#f3c86e','#6cbf84','#e2674f','#f6ece0'],W=fx.width;
-  for(let i=0;i<140;i++)parts.push({x:W/2+(Math.random()-.5)*W*.3,y:fx.height*.35,vx:(Math.random()-.5)*16*devicePixelRatio,
-    vy:(-Math.random()*14-6)*devicePixelRatio,s:(Math.random()*6+5)*devicePixelRatio,c:cols[i%5],r:Math.random()*6,vr:(Math.random()-.5)*.3,life:0});
+  const cols=['#e8b04b','#f3c86e','#6cbf84','#e2674f','#6aa8d8','#f6ece0'],W=fx.width,dp=devicePixelRatio;
+  for(let i=0;i<140;i++)parts.push({x:W/2+(Math.random()-.5)*W*.3,y:fx.height*.35,vx:(Math.random()-.5)*16*dp,
+    vy:(-Math.random()*14-6)*dp,s:(Math.random()*6+5)*dp,c:cols[i%6],r:Math.random()*6,vr:(Math.random()-.5)*.3,life:0});
   if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}
 }
 function drawFx(){
@@ -328,131 +555,307 @@ function drawFx(){
   parts=parts.filter(p=>p.y<fx.height+40&&p.life<300);
   if(parts.length)requestAnimationFrame(drawFx);else{fxOn=false;fctx.clearRect(0,0,fx.width,fx.height)}
 }
-function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
-function plusOne(btn){const r=btn.getBoundingClientRect(),d=document.createElement('div');d.className='plus';d.textContent='+١';
+function plusOne(btn,txt='+١'){const r=btn.getBoundingClientRect(),d=document.createElement('div');d.className='plus';d.textContent=txt;
   d.style.left=(r.left+r.width/2-16)+'px';d.style.top=(r.top-10)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
 
-let players = store.get('jalsa_players', []);
-let scores = {};
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0);if(id!=='s-talk')stopTimer()}
-document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
-function modal(t){$('modalTxt').textContent=t;$('modal').classList.add('on')}
-$('modalOk').onclick=()=>$('modal').classList.remove('on');
+// ================= تنقل ونوافذ =================
+let current='s-home';
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');current=id;window.scrollTo(0,0);
+  if(id!=='s-talk')spyTimer.stop(); if(id!=='s-play')playTimer.stop()}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+let modalCb=null;
+function modal(t,cb){$('modalTxt').textContent=t;modalCb=cb||null;$('modalNo').style.display=cb?'block':'none';$('modalOk').textContent=cb?'نعم':'تمام';$('modal').classList.add('on')}
+$('modalOk').onclick=()=>{$('modal').classList.remove('on');if(modalCb)modalCb()};
+$('modalNo').onclick=()=>$('modal').classList.remove('on');
 
-// اللاعبين
+// ================= مؤقت =================
+class Timer{
+  constructor(el,onEnd){this.el=el;this.onEnd=onEnd;this.left=0;this.int=null}
+  fmt(s){return ar(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'))}
+  draw(){$(this.el).textContent=this.fmt(this.left);$(this.el).classList.toggle('low',this.left<=10)}
+  start(secs){this.left=secs;this.draw();this.run()}
+  run(){this.stop();this.int=setInterval(()=>{this.left--;this.draw();
+    if(this.left<=10&&this.left>0){SFX.tick();anim($(this.el),'pop')}
+    if(this.left<=0){this.stop();SFX.end();buzz(400);this.onEnd&&this.onEnd()}},1000)}
+  stop(){clearInterval(this.int);this.int=null}
+  get running(){return !!this.int}
+}
+
+// ================= اللاعبين وسجل الليلة =================
+let players = store.get('jalsa_players', []);
+let tally = store.get('jalsa_tally', {});
+function award(names){names.forEach(n=>tally[n]=(tally[n]||0)+1);store.set('jalsa_tally',tally)}
 function renderPlayers(){
   $('chips').innerHTML = players.map((p,i)=>`<div class="chip">${esc(p)}<button data-i="${i}" aria-label="حذف">✕</button></div>`).join('');
-  $('chips').querySelectorAll('button').forEach(b=>b.onclick=()=>{players.splice(+b.dataset.i,1);save()});
+  $('chips').querySelectorAll('button').forEach(b=>b.onclick=()=>{players.splice(+b.dataset.i,1);savePlayers()});
   const ok = players.length>=3;
   $('toModes').disabled=!ok;
   $('pHint').textContent = ok ? `${ar(players.length)} لاعبين جاهزين` : `تحتاجون ٣ لاعبين على الأقل (باقي ${ar(3-players.length)})`;
 }
-function save(){store.set('jalsa_players',players);renderPlayers()}
+function savePlayers(){store.set('jalsa_players',players);renderPlayers()}
 $('addForm').onsubmit=e=>{e.preventDefault();const v=$('nameIn').value.trim();
   if(!v)return; if(players.includes(v)){modal('هالاسم موجود، غيّره شوي');return}
-  if(players.length>=12){modal('الحد ١٢ لاعب');return}
-  players.push(v);$('nameIn').value='';save();$('nameIn').focus()};
+  if(players.length>=16){modal('الحد ١٦ لاعب');return}
+  players.push(v);$('nameIn').value='';savePlayers();$('nameIn').focus()};
 $('toModes').onclick=()=>go('s-modes');
 renderPlayers();
 
-// الدخيل
-let cat = 'عشوائي', round = null;
-const catNames = ['عشوائي',...Object.keys(CATS)];
-function renderCats(){$('cats').innerHTML=catNames.map(c=>`<button class="cat ${c===cat?'sel':''}">${c}</button>`).join('');
-  $('cats').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{cat=b.textContent;renderCats()})}
-renderCats();
-let talkSecs = store.get('jalsa_time',180);
-const TIMES=[[120,'دقيقتين'],[180,'٣ دقايق'],[300,'٥ دقايق']];
-function renderTimes(){$('times').innerHTML=TIMES.map(([s,l])=>`<button class="cat ${s===talkSecs?'sel':''}" data-s="${s}">${l}</button>`).join('');
-  $('times').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{talkSecs=+b.dataset.s;store.set('jalsa_time',talkSecs);renderTimes()})}
-renderTimes();
+function renderTally(){
+  const list=players.map(p=>[p,tally[p]||0]).concat(Object.keys(tally).filter(k=>!players.includes(k)).map(k=>[k,tally[k]]))
+    .sort((a,b)=>b[1]-a[1]);
+  const medals=['🥇','🥈','🥉'];
+  $('tallyList').innerHTML=list.length?list.map(([p,s],i)=>`<div class="score"><span>${s>0&&i<3?`<span class="medal">${medals[i]}</span>`:''}${esc(p)}</span><b>${ar(s)}</b></div>`).join('')
+    :'<p class="hint">ما فيه نتائج للحين</p>';
+}
+$('toTally').onclick=()=>{renderTally();go('s-tally')};
+$('tallyReset').onclick=()=>modal('أكيد تبي تصفّر سجل الليلة؟',()=>{tally={};store.set('jalsa_tally',tally);renderTally()});
+
+// ================= كلماتكم =================
+let custom = store.get('jalsa_custom',{words:[],who:[],dares:[]});
+const CTABS=[['words','كلمات الدخيل','مثل: استراحة أبو فهد','أضيفوا ٤ كلمات على الأقل وتطلع لكم فئة «كلماتكم» في الدخيل'],
+             ['who','مين فينا','مثل: مين فينا يجي متأخر للاستراحة؟','تطلع لكم حزمة «كلماتكم» في مين فينا'],
+             ['dares','تحديات','مثل: قلّد أبو سعد وهو يصب القهوة','تطلع لكم حزمة «كلماتكم» في التحدي']];
+let cTab='words';
+function renderCustom(){
+  $('cTabs').innerHTML=CTABS.map(([k,l])=>`<button class="cat ${k===cTab?'sel':''}" data-k="${k}">${l} (${ar(custom[k].length)})</button>`).join('');
+  $('cTabs').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{cTab=b.dataset.k;renderCustom()});
+  const t=CTABS.find(x=>x[0]===cTab);$('cIn').placeholder=t[2];$('cHint').textContent=t[3];
+  $('cList').innerHTML=custom[cTab].map((w,i)=>`<div class="item"><span>${esc(w)}</span><button data-i="${i}">✕</button></div>`).join('');
+  $('cList').querySelectorAll('button').forEach(b=>b.onclick=()=>{custom[cTab].splice(+b.dataset.i,1);store.set('jalsa_custom',custom);renderCustom()});
+}
+$('cForm').onsubmit=e=>{e.preventDefault();const v=$('cIn').value.trim();if(!v)return;
+  if(custom[cTab].includes(v)){modal('موجودة من قبل');return}
+  custom[cTab].unshift(v);store.set('jalsa_custom',custom);$('cIn').value='';renderCustom();$('cIn').focus()};
+renderCustom();
+document.querySelector('[data-go="s-custom"]').addEventListener('click',renderCustom);
+
+// ================= الدخيل =================
+let cat='عشوائي', spyCount=1, round=null, talkSecs=store.get('jalsa_time',180);
+function catsAll(){const c={...CATS};if(custom.words.length>=4)c['كلماتكم']=custom.words;return c}
+function renderSpySetup(){
+  const C=catsAll(), names=['عشوائي',...Object.keys(C)]; if(!names.includes(cat))cat='عشوائي';
+  $('cats').innerHTML=names.map(c=>`<button class="cat ${c===cat?'sel':''}">${c}</button>`).join('');
+  $('cats').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{cat=b.textContent;renderSpySetup()});
+  const can2=players.length>=5; if(!can2)spyCount=1;
+  $('spyN').innerHTML=[1,2].map(n=>`<button class="cat ${n===spyCount?'sel':''}" data-n="${n}" ${n===2&&!can2?'disabled':''}>${n===1?'دخيل واحد':'دخيلين'}</button>`).join('');
+  $('spyN').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{spyCount=+b.dataset.n;renderSpySetup()});
+  $('spyNHint').textContent=can2?'مع دخيلين، كل دخيل ما يعرف مين الثاني 😈':'الدخيلين يحتاجون ٥ لاعبين أو أكثر';
+  const T=[[120,'دقيقتين'],[180,'٣ دقايق'],[300,'٥ دقايق']];
+  $('times').innerHTML=T.map(([s,l])=>`<button class="cat ${s===talkSecs?'sel':''}" data-s="${s}">${l}</button>`).join('');
+  $('times').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{talkSecs=+b.dataset.s;store.set('jalsa_time',talkSecs);renderSpySetup()});
+}
+document.querySelector('[data-go="s-spySetup"]').addEventListener('click',renderSpySetup);
 
 function startSpy(){
-  const c = cat==='عشوائي' ? pick(Object.keys(CATS)) : cat;
-  round = {cat:c, word:pick(CATS[c]), spy:Math.floor(Math.random()*players.length), order:shuffle(players.map((_,i)=>i)), idx:0};
+  const C=catsAll(), c = cat==='عشوائي' ? pick(Object.keys(C)) : cat;
+  const idx=shuffle(players.map((_,i)=>i));
+  round={cat:c, list:C[c], word:pick(C[c]), spies:idx.slice(0,spyCount), order:shuffle(players.map((_,i)=>i)), idx:0, votes:[]};
   showPass();
 }
 function showPass(){
-  const p = round.order[round.idx];
-  $('passName').textContent = players[p];
-  $('passCount').textContent = `${ar(round.idx+1)} من ${ar(players.length)}`;
+  const p=round.order[round.idx];
+  $('passName').textContent=players[p];
+  $('passCount').textContent=`${ar(round.idx+1)} من ${ar(players.length)}`;
   go('s-pass');anim($('passBox'),'pop');
 }
 $('spyStart').onclick=startSpy;
 $('spyAgain').onclick=startSpy;
 $('reveal').onclick=()=>{
-  const p = round.order[round.idx];
-  $('wordBox').innerHTML = p===round.spy
-    ? `<div class="lbl">${esc(players[p])}</div><div class="spy">أنت الدخيل 🕵️</div><div class="lbl">الفئة: ${round.cat}<br>اندمج معهم وحاول تعرف الكلمة</div>`
-    : `<div class="lbl">${esc(players[p])}، كلمتك هي</div><div class="word">${round.word}</div><div class="lbl">الفئة: ${round.cat}</div>`;
+  const p=round.order[round.idx], isSpy=round.spies.includes(p);
+  $('wordBox').innerHTML = isSpy
+    ? `<div class="lbl">${esc(players[p])}</div><div class="spy">أنت الدخيل 🕵️</div><div class="lbl">الفئة: ${esc(round.cat)}<br>اندمج معهم وحاول تعرف الكلمة</div>`
+    : `<div class="lbl">${esc(players[p])}، كلمتك هي</div><div class="word">${esc(round.word)}</div><div class="lbl">الفئة: ${esc(round.cat)}</div>`;
   go('s-word');anim($('wordBox'),'flip');
-  if(p===round.spy){SFX.spy();buzz([80,60,80])}else SFX.reveal();
+  if(isSpy){SFX.spy();buzz([80,60,80])}else SFX.reveal();
 };
 $('hideWord').onclick=()=>{round.idx++; if(round.idx<players.length) showPass(); else startTalk()};
 
-let tLeft=talkSecs, tInt=null, tRun=false;
-function fmt(s){return ar(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'))}
-function tick(){$('timer').textContent=fmt(tLeft);$('timer').classList.toggle('low',tLeft<=30)}
-function stopTimer(){clearInterval(tInt);tInt=null;tRun=false}
-function runTimer(){stopTimer();tRun=true;$('tToggle').textContent='إيقاف';
-  tInt=setInterval(()=>{tLeft--;tick();if(tLeft<=10&&tLeft>0){SFX.tick();anim($('timer'),'pop')}if(tLeft<=0){stopTimer();SFX.end();buzz(400);$('tToggle').textContent='انتهى';goVote()}},1000)}
-function startTalk(){SFX.whoosh();
-  tLeft=talkSecs;tick();$('starter').textContent=pick(players);$('catLbl').textContent='الفئة: '+round.cat;
-  go('s-talk');runTimer();
-}
-$('tToggle').onclick=()=>{if(tLeft<=0)return; if(tRun){stopTimer();$('tToggle').textContent='كمّل'} else runTimer()};
+const spyTimer=new Timer('timer',()=>{$('tToggle').textContent='انتهى';goVote()});
+function startTalk(){SFX.whoosh();$('starter').textContent=pick(players);$('catLbl').textContent='الفئة: '+round.cat;
+  $('tToggle').textContent='إيقاف';go('s-talk');spyTimer.start(talkSecs)}
+$('tToggle').onclick=()=>{if(spyTimer.left<=0)return;if(spyTimer.running){spyTimer.stop();$('tToggle').textContent='كمّل'}else{spyTimer.run();$('tToggle').textContent='إيقاف'}};
 function goVote(){
-  $('voteList').innerHTML = players.map((p,i)=>`<button class="opt" data-i="${i}" style="text-align:right">${esc(p)}</button>`).join('');
-  $('voteList').querySelectorAll('button').forEach(b=>b.onclick=()=>showResult(+b.dataset.i));
+  round.votes=[];
+  $('voteTitle').textContent=spyCount===1?'مين الدخيل برأيكم؟':'مين الدخيلين برأيكم؟';
+  $('voteHint').textContent=spyCount===1?'تناقشوا واختاروا واحد بالأغلبية':'اختاروا اثنين بالأغلبية';
+  $('voteList').innerHTML=players.map((p,i)=>`<button class="opt" data-i="${i}" style="text-align:right">${esc(p)}</button>`).join('');
+  $('voteList').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    if(spyCount===1){showResult([i]);return}
+    if(round.votes.includes(i))round.votes=round.votes.filter(x=>x!==i);else if(round.votes.length<2)round.votes.push(i);
+    $('voteList').querySelectorAll('button').forEach(x=>x.classList.toggle('picked',round.votes.includes(+x.dataset.i)));
+    $('voteGo').style.display=round.votes.length===2?'block':'none';
+  });
+  $('voteGo').style.display='none';
   go('s-vote');
 }
-$('toVote').onclick=goVote;
+$('toVote').onclick=()=>{spyTimer.stop();goVote()};
+$('voteGo').onclick=()=>showResult(round.votes);
 
+function spyNames(){return round.spies.map(i=>players[i])}
+function nonSpies(){return players.filter((_,i)=>!round.spies.includes(i))}
 function showResult(voted){
-  const spyName = esc(players[round.spy]);
-  const caught = voted===round.spy;
-  if(caught){SFX.win();confetti()}else{SFX.lose();setTimeout(()=>anim($('resultBox'),'shake'),50)}
-  $('resultBox').innerHTML = caught
-    ? `<div class="lbl">صدتوه! الدخيل كان</div><div class="name">${spyName}</div><div class="lbl">بس باقي له فرصة… إذا خمّن الكلمة يفوز</div>`
-    : `<div class="lbl">غلطتوا! الدخيل كان</div><div class="spy" style="font-size:38px">${spyName}</div><div class="lbl">والكلمة كانت</div><div class="word" style="font-size:36px">${round.word}</div><div class="lbl" style="color:var(--gold)">الدخيل فاز 🏆</div>`;
+  const names=spyNames().map(esc).join(' و ');
+  const caught=round.spies.every(s=>voted.includes(s));
+  const one=spyCount===1;
   $('guessArea').innerHTML='';
   if(caught){
-    const opts = shuffle([round.word,...shuffle(CATS[round.cat].filter(w=>w!==round.word)).slice(0,7)]);
-    $('guessArea').innerHTML = `<div class="card" style="margin-top:12px"><div style="font-weight:700">${spyName}، وش الكلمة؟</div><div class="opts">${opts.map(o=>`<button class="opt">${o}</button>`).join('')}</div></div>`;
+    SFX.win();confetti();
+    $('resultBox').innerHTML=`<div class="lbl">صدتوه${one?'':'م'}! ${one?'الدخيل كان':'الدخيلين كانوا'}</div><div class="name">${names}</div><div class="lbl">بس باقي ${one?'له':'لهم'} فرصة… إذا خمّن${one?'':'وا'} الكلمة ${one?'يفوز':'يفوزون'}</div>`;
+    const opts=shuffle([round.word,...shuffle(round.list.filter(w=>w!==round.word)).slice(0,7)]);
+    $('guessArea').innerHTML=`<div class="card" style="margin-top:12px"><h3>${names}، وش الكلمة؟</h3><div class="opts">${opts.map(o=>`<button class="opt">${esc(o)}</button>`).join('')}</div></div>`;
     $('guessArea').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-      $('guessArea').querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.textContent===round.word)x.classList.add('right')});
-      if(b.textContent!==round.word)b.classList.add('wrong');
-      const win = b.textContent===round.word;
-      if(win){SFX.spy();anim($('guessArea').querySelector('.card'),'shake')}else{SFX.win();confetti()}
+      const all=$('guessArea').querySelectorAll('.opt');
+      all.forEach(x=>{x.disabled=true;if(x.textContent===round.word)x.classList.add('right')});
+      const win=b.textContent===round.word; if(!win)b.classList.add('wrong');
+      if(win){SFX.spy();anim($('guessArea').querySelector('.card'),'shake');award(spyNames())}else{SFX.win();confetti();award(nonSpies())}
       $('guessArea').querySelector('.card').insertAdjacentHTML('beforeend',
-        `<div style="text-align:center;font-size:22px;font-weight:800;margin-top:14px;color:${win?'var(--gold)':'var(--green)'}">${win?'خمّنها! الدخيل فاز 🏆':'ما عرفها، أنتم فزتوا 🎉'}</div>`);
+        `<div style="text-align:center;font-size:22px;font-weight:800;margin-top:14px;color:${win?'var(--gold)':'var(--green)'}">${win?(one?'خمّنها! الدخيل فاز 🏆':'خمّنوها! الدخلاء فازوا 🏆'):'ما عرفوها، أنتم فزتوا 🎉'}</div>`);
     });
+  }else{
+    SFX.lose();award(spyNames());
+    $('resultBox').innerHTML=`<div class="lbl">غلطتوا! ${one?'الدخيل كان':'الدخيلين كانوا'}</div><div class="spy" style="font-size:36px">${names}</div><div class="lbl">والكلمة كانت</div><div class="word" style="font-size:34px">${esc(round.word)}</div><div class="lbl" style="color:var(--gold)">${one?'الدخيل فاز':'الدخلاء فازوا'} 🏆</div>`;
+    setTimeout(()=>anim($('resultBox'),'shake'),50);
   }
   go('s-result');anim($('resultBox'),'pop');
 }
 
+// ================= الحزم (مين فينا / تحدي) =================
+let packGame='who', selPacks={who:store.get('jalsa_pk_who',['عام']),dare:store.get('jalsa_pk_dare',['عام'])};
+function packsOf(g){const base=g==='who'?{...WHO}:{...DARES};const c=g==='who'?custom.who:custom.dares;if(c.length)base['كلماتكم']=c;return base}
+function renderPacks(){
+  const P=packsOf(packGame);selPacks[packGame]=selPacks[packGame].filter(k=>P[k]);if(!selPacks[packGame].length)selPacks[packGame]=['عام'];
+  $('packsTitle').textContent=packGame==='who'?'مين فينا؟':'تحدي';
+  $('packs').innerHTML=Object.keys(P).map(k=>`<button class="cat ${selPacks[packGame].includes(k)?'sel':''}" data-k="${k}">${k} (${ar(P[k].length)})</button>`).join('');
+  $('packs').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{const k=b.dataset.k,s=selPacks[packGame];
+    if(s.includes(k)){if(s.length>1)s.splice(s.indexOf(k),1)}else s.push(k);store.set('jalsa_pk_'+packGame,s);renderPacks()});
+  $('packsHint').textContent='تقدرون تختارون أكثر من حزمة. «عائلة» مناسبة لو معكم أطفال.';
+}
+document.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{packGame=b.dataset.pack;renderPacks();go('s-packs')});
+function deckFrom(g){const P=packsOf(g);return shuffle([...new Set(selPacks[g].flatMap(k=>P[k]))])}
+$('packsGo').onclick=()=>{if(packGame==='who'){whoDeck=deckFrom('who');nextWho();go('s-who')}else{dareDeck=deckFrom('dare');scores={};turn=Math.floor(Math.random()*players.length)-1;nextDare();go('s-dare')}};
+
 // مين فينا
 let whoDeck=[];
-function nextWho(){if(!whoDeck.length)whoDeck=shuffle(WHO);$('whoQ').textContent=whoDeck.pop();anim($('whoQ'),'flip')}
-$('startWho').onclick=()=>{nextWho();go('s-who')};
+function nextWho(){if(!whoDeck.length)whoDeck=deckFrom('who');$('whoQ').textContent=whoDeck.pop();anim($('whoQ'),'flip')}
 $('whoNext').onclick=nextWho;
 
 // تحدي
-let dareDeck=[], turn=-1;
-function renderScores(){
-  const list = players.map(p=>[p,scores[p]||0]).sort((a,b)=>b[1]-a[1]);
-  $('scores').innerHTML = list.map(([p,s])=>`<div class="score"><span>${esc(p)}</span><b>${ar(s)}</b></div>`).join('');
+let dareDeck=[], turn=-1, scores={};
+function scoreList(el,obj){
+  const list=players.map(p=>[p,obj[p]||0]).sort((a,b)=>b[1]-a[1]);
+  $(el).innerHTML=list.map(([p,s])=>`<div class="score"><span>${esc(p)}</span><b>${ar(s)}</b></div>`).join('');
 }
 function nextDare(){
-  if(!dareDeck.length)dareDeck=shuffle(DARES);
+  if(!dareDeck.length)dareDeck=deckFrom('dare');
   turn=(turn+1)%players.length;
-  $('dareName').textContent=players[turn];$('dareQ').textContent=dareDeck.pop();renderScores();anim($('dareName'),'pop');anim($('dareQ'),'flip');
+  $('dareName').textContent=players[turn];$('dareQ').textContent=dareDeck.pop();scoreList('scores',scores);anim($('dareName'),'pop');anim($('dareQ'),'flip');
 }
-$('startDare').onclick=()=>{scores={};turn=Math.floor(Math.random()*players.length)-1;nextDare();go('s-dare')};
-$('dareDone').dataset.silent=1;
-$('dareDone').onclick=e=>{const p=players[turn];scores[p]=(scores[p]||0)+1;SFX.point();plusOne(e.currentTarget);nextDare()};
+$('dareDone').onclick=e=>{const p=players[turn];scores[p]=(scores[p]||0)+1;award([p]);SFX.point();plusOne(e.currentTarget);nextDare()};
 $('dareSkip').onclick=nextDare;
-// تشغيل بدون إنترنت
+
+// ================= صح ولا كذب =================
+let tlDeck=[], tlTurn=-1, tlScores={};
+function tlTopic(){if(!tlDeck.length)tlDeck=shuffle(TL_TOPICS);$('tlQ').textContent=tlDeck.pop();anim($('tlQ'),'flip')}
+function tlNext(){tlTurn=(tlTurn+1)%players.length;$('tlName').textContent=players[tlTurn];anim($('tlName'),'pop');tlTopic();scoreList('tlScores',tlScores)}
+$('startTL').onclick=()=>{tlScores={};tlTurn=Math.floor(Math.random()*players.length)-1;tlNext();go('s-tl')};
+$('tlFool').onclick=e=>{const p=players[tlTurn];tlScores[p]=(tlScores[p]||0)+1;award([p]);SFX.point();plusOne(e.currentTarget);tlNext()};
+$('tlCaught').onclick=()=>{SFX.bad();tlNext()};
+$('tlSkip').onclick=tlTopic;
+
+// ================= ألعاب الفرق =================
+const TEAM_NAMES=['الصقور','الذيابة'];
+let teamGame='taboo', teams=[[],[]], match=null, roundsPer=store.get('jalsa_rounds',3);
+const TG={
+  taboo:{title:'ولا كلمة',verb:'يشرح',secs:60,hint:'اشرح الكلمة لفريقك بدون ما تقولها ولا تقول الكلمات الممنوعة. الفريق الثاني يراقب!'},
+  act:{title:'مثّلها',verb:'يمثّل',secs:60,hint:'مثّل بدون صوت ولا كلام، وفريقك يخمّن. تقدر تأشر بس ممنوع تتكلم!'},
+  quiz:{title:'تحدي الفرق',verb:'يجاوب',secs:0,hint:'كل فريق ياخذ سؤال بالدور. تتشاورون وتجاوبون، والجواب الصح بنقطة.'}
+};
+function splitTeams(){const s=shuffle(players);teams=[s.filter((_,i)=>i%2===0),s.filter((_,i)=>i%2===1)]}
+function renderTeams(){
+  $('teamsTitle').textContent=TG[teamGame].title;
+  $('teamsBox').innerHTML=teams.map((t,i)=>`<div class="team t${i}"><h3>${TEAM_NAMES[i]}</h3>${t.map(p=>`<div class="m">${esc(p)}</div>`).join('')}</div>`).join('');
+  $('roundsCard').style.display=teamGame==='quiz'?'none':'block';
+  $('roundsSel').innerHTML=[2,3,5].map(n=>`<button class="cat ${n===roundsPer?'sel':''}" data-n="${n}">${ar(n)}</button>`).join('');
+  $('roundsSel').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{roundsPer=+b.dataset.n;store.set('jalsa_rounds',roundsPer);renderTeams()});
+  $('teamsHint').textContent=TG[teamGame].hint;
+}
+document.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{
+  if(players.length<4){modal('ألعاب الفرق تحتاج ٤ لاعبين على الأقل');return}
+  teamGame=b.dataset.team;splitTeams();renderTeams();go('s-teams')});
+$('shuffleTeams').onclick=()=>{splitTeams();renderTeams();anim($('teamsBox'),'pop')};
+
+function tscore(el){
+  $(el).innerHTML=[0,1].map(i=>`<div class="c${i} ${match&&match.team===i?'on':''}"><span>${TEAM_NAMES[i]}</span><b>${ar(match.pts[i])}</b></div>`).join('');
+}
+function startMatch(){
+  match={pts:[0,0],team:Math.random()<.5?0:1,turns:0,ptr:[0,0],deck:[],qn:0};
+  if(teamGame==='taboo')match.deck=shuffle(TABOO);
+  if(teamGame==='act')match.deck=shuffle(ACT);
+  if(teamGame==='quiz'){match.deck=shuffle(QUIZ).slice(0,Math.min(12,QUIZ.length));nextQuiz();return}
+  showTurn();
+}
+$('teamsGo').onclick=startMatch;
+$('matchAgain').onclick=()=>{splitTeams();renderTeams();go('s-teams')};
+
+function showTurn(){
+  const t=match.team, who=teams[t][match.ptr[t]%teams[t].length];
+  match.player=who;
+  $('turnTeam').textContent=`دور فريق ${TEAM_NAMES[t]} · الجولة ${ar(Math.floor(match.turns/2)+1)} من ${ar(roundsPer)}`;
+  $('turnName').textContent=who;
+  $('turnName').style.color=t?'var(--blue)':'var(--gold)';
+  $('turnHint').textContent=`${TG[teamGame].verb}، وعنده ${ar(TG[teamGame].secs)} ثانية. عطوه الجوال 📱`;
+  tscore('tsTurn');go('s-turn');anim($('turnName'),'pop');
+}
+const playTimer=new Timer('pTimer',()=>endTurn());
+$('turnGo').onclick=()=>{match.turnPts=0;match.got=0;$('pFoul').style.display=teamGame==='taboo'?'block':'none';nextCard();go('s-play');SFX.whoosh();playTimer.start(TG[teamGame].secs)};
+function nextCard(){
+  if(!match.deck.length)match.deck=shuffle(teamGame==='taboo'?TABOO:ACT);
+  const c=match.deck.pop();
+  $('pCard').innerHTML = teamGame==='taboo'
+    ? `<div class="word">${esc(c[0])}</div><div class="taboo">${c.slice(1).map(w=>`<div>${esc(w)}</div>`).join('')}</div>`
+    : `<div class="lbl">مثّل</div><div class="word">${esc(c)}</div>`;
+  $('pCount').textContent=`نقاط الدور: ${ar(match.turnPts)}`;
+  anim($('pCard'),'flip');
+}
+$('pOk').onclick=e=>{match.turnPts++;match.got++;SFX.point();plusOne(e.currentTarget);nextCard()};
+$('pSkip').onclick=()=>nextCard();
+$('pFoul').onclick=e=>{match.turnPts--;SFX.bad();buzz(150);plusOne(e.currentTarget,'-١');anim($('pCard'),'shake');nextCard()};
+function endTurn(){
+  playTimer.stop();
+  const t=match.team; match.pts[t]+=match.turnPts; match.ptr[t]++; match.turns++;
+  $('turnEndBox').innerHTML=`<div class="lbl">خلص الوقت ⏰</div><div class="name" style="color:${t?'var(--blue)':'var(--gold)'}">${esc(match.player)}</div><div class="lbl">جاب لفريق ${TEAM_NAMES[t]}</div><div class="word">${ar(match.turnPts)} ${Math.abs(match.turnPts)===1?'نقطة':'نقاط'}</div>`;
+  match.team=1-t; tscore('tsEnd');
+  $('nextTurn').textContent=match.turns>=roundsPer*2?'شوف النتيجة 🏆':'الدور اللي بعده';
+  go('s-turnEnd');anim($('turnEndBox'),'pop');
+}
+$('nextTurn').onclick=()=>{if(match.turns>=roundsPer*2)endMatch();else showTurn()};
+
+function nextQuiz(){
+  if(match.qn>=match.deck.length){endMatch();return}
+  const [q,a,wrong]=match.deck[match.qn], t=match.team;
+  $('qMeta').textContent=`سؤال ${ar(match.qn+1)} من ${ar(match.deck.length)} · دور ${TEAM_NAMES[t]}`;
+  $('qMeta').style.color=t?'var(--blue)':'var(--gold)';
+  $('qText').textContent=q;
+  $('qOpts').innerHTML=shuffle([a,...wrong]).map(o=>`<button class="opt">${esc(o)}</button>`).join('');
+  $('qOpts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    $('qOpts').querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.textContent===a)x.classList.add('right')});
+    if(b.textContent===a){match.pts[t]++;SFX.point();plusOne(b)}else{b.classList.add('wrong');SFX.bad();buzz(150)}
+    tscore('tsQuiz');$('qNext').style.display='block';
+  });
+  $('qNext').style.display='none';tscore('tsQuiz');
+  if(current!=='s-quiz')go('s-quiz');anim($('qText'),'flip');
+}
+$('qNext').onclick=()=>{match.qn++;match.team=1-match.team;nextQuiz()};
+
+function endMatch(){
+  match.team=-1;
+  const [a,b]=match.pts;
+  if(a===b){$('matchBox').innerHTML=`<div class="lbl">النتيجة</div><div class="word">تعادل! 🤝</div><div class="lbl">ما أحد غلب أحد، جولة ثانية؟</div>`;SFX.reveal()}
+  else{const w=a>b?0:1;award(teams[w]);SFX.win();confetti();
+    $('matchBox').innerHTML=`<div class="lbl">الفايز</div><div class="name" style="color:${w?'var(--blue)':'var(--gold)'};font-size:46px">فريق ${TEAM_NAMES[w]} 🏆</div><div class="lbl">${teams[w].map(esc).join('، ')}</div>`}
+  tscore('tsMatch');go('s-match');anim($('matchBox'),'pop');
+}
 if('serviceWorker' in navigator && location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 </body>
