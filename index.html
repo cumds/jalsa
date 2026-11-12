@@ -115,6 +115,9 @@
   @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
   .sound{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:14px;z-index:5;background:var(--card);border:1px solid var(--line);
     color:var(--text);width:44px;height:44px;border-radius:50%;font-size:20px}
+  .quit{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;z-index:5;background:var(--card);border:1px solid var(--line);
+    color:var(--muted);height:44px;padding:0 16px;border-radius:999px;font-size:16px;display:none}
+  .quit.on{display:block}
   #fx{position:fixed;inset:0;pointer-events:none;z-index:20}
   .plus{direction:ltr;position:fixed;font-size:34px;font-weight:800;color:var(--gold);pointer-events:none;animation:up 1s ease forwards;z-index:15}
   @keyframes up{to{transform:translateY(-80px);opacity:0}}
@@ -122,6 +125,7 @@
 </head>
 <body>
 <button class="sound" id="snd" aria-label="الصوت" data-silent="1">🔊</button>
+<button class="quit" id="quit" aria-label="خروج">✕ خروج</button>
 <canvas id="fx"></canvas>
 <div class="wrap">
 
@@ -139,7 +143,7 @@
       <div class="hint" id="pHint"></div>
     </div>
     <button class="btn" id="toModes" disabled>يلا نلعب</button>
-    <p class="count" style="opacity:.6">نسخة ٥</p>
+    <p class="count" style="opacity:.6">نسخة ٦</p>
   </section>
 
   <!-- القائمة -->
@@ -584,12 +588,19 @@ function plusOne(btn,txt='+١'){const r=btn.getBoundingClientRect(),d=document.c
 // ================= تنقل ونوافذ =================
 let current='s-home';
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');current=id;window.scrollTo(0,0);
-  if(id!=='s-talk')spyTimer.stop(); if(id!=='s-play')playTimer.stop()}
+  if(id!=='s-talk')spyTimer.stop(); if(id!=='s-play')playTimer.stop();
+  $('quit').classList.toggle('on',IN_GAME.includes(id))}
+const IN_GAME=['s-pass','s-word','s-talk','s-vote','s-turn','s-play','s-turnEnd','s-quiz'];
+let pausedTimer=null;
+$('quit').onclick=()=>{
+  pausedTimer=[spyTimer,playTimer].find(t=>t.running)||null; if(pausedTimer)pausedTimer.stop();
+  modal('تبي تطلع من اللعبة؟ الجولة الحالية ما بتنحسب.',()=>{pausedTimer=null;go('s-modes')},()=>{if(pausedTimer){pausedTimer.run();pausedTimer=null}});
+};
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
-let modalCb=null;
-function modal(t,cb){$('modalTxt').textContent=t;modalCb=cb||null;$('modalNo').style.display=cb?'block':'none';$('modalOk').textContent=cb?'نعم':'تمام';$('modal').classList.add('on')}
+let modalCb=null,modalNoCb=null;
+function modal(t,cb,noCb){$('modalTxt').textContent=t;modalCb=cb||null;modalNoCb=noCb||null;$('modalNo').style.display=cb?'block':'none';$('modalOk').textContent=cb?'نعم':'تمام';$('modal').classList.add('on')}
 $('modalOk').onclick=()=>{$('modal').classList.remove('on');if(modalCb)modalCb()};
-$('modalNo').onclick=()=>$('modal').classList.remove('on');
+$('modalNo').onclick=()=>{$('modal').classList.remove('on');if(modalNoCb)modalNoCb()};
 
 // ================= مؤقت =================
 class Timer{
