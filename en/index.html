@@ -1,0 +1,3849 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jalsa – Party Games</title>
+<meta name="theme-color" content="#1a1410">
+<meta name="description" content="Party games for gatherings, on one phone">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icons/favicon-48.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="الجلسة">
+<script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<style>
+@font-face{font-family:'Reem Kufi';font-weight:600;font-display:swap;src:url(../fonts/reem-kufi-arabic-600-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Reem Kufi';font-weight:600;font-display:swap;src:url(../fonts/reem-kufi-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Reem Kufi';font-weight:700;font-display:swap;src:url(../fonts/reem-kufi-arabic-700-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Reem Kufi';font-weight:700;font-display:swap;src:url(../fonts/reem-kufi-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Tajawal';font-weight:400;font-display:swap;src:url(../fonts/tajawal-arabic-400-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Tajawal';font-weight:400;font-display:swap;src:url(../fonts/tajawal-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Tajawal';font-weight:500;font-display:swap;src:url(../fonts/tajawal-arabic-500-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Tajawal';font-weight:500;font-display:swap;src:url(../fonts/tajawal-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Tajawal';font-weight:700;font-display:swap;src:url(../fonts/tajawal-arabic-700-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Tajawal';font-weight:700;font-display:swap;src:url(../fonts/tajawal-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Tajawal';font-weight:800;font-display:swap;src:url(../fonts/tajawal-arabic-800-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-08FF,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E,U+2010-2011,U+204F,U+2E41}
+@font-face{font-family:'Tajawal';font-weight:800;font-display:swap;src:url(../fonts/tajawal-latin-800-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-200B,U+2012-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  :root{
+    --bg:#1a1410; --card:#271e17; --card2:#33271d; --line:#4a3a2b;
+    --text:#f6ece0; --muted:#bfa98f; --gold:#e8b04b; --gold2:#f3c86e;
+    --red:#e2674f; --green:#6cbf84; --blue:#6aa8d8; --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Tajawal',system-ui,sans-serif;min-height:100%}
+  body{padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px);
+    background-image:radial-gradient(circle at 50% -10%, #3a2a1a 0%, transparent 55%);}
+  .wrap{max-width:480px;margin:0 auto;padding-top:44px}
+  .screen{display:none;animation:in .25s ease}
+  .screen.on{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h1{font-size:44px;font-weight:800;margin:8px 0 0;text-align:center;color:var(--gold)}
+  .sub{text-align:center;color:var(--muted);margin:4px 0 24px;font-size:17px}
+  h2{font-size:26px;font-weight:800;margin:4px 0 16px}
+  h3{font-size:19px;font-weight:700;margin:0 0 10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+  .row{display:flex;gap:10px;align-items:center}
+  .row>.btn{flex:1}
+  input[type=text]{flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);color:var(--text);
+    font:inherit;font-size:18px;padding:14px 16px;border-radius:14px;outline:none}
+  input[type=text]:focus{border-color:var(--gold)}
+  button{font:inherit;cursor:pointer;border:none;border-radius:16px;font-weight:700}
+  .btn{display:block;width:100%;padding:17px;font-size:20px;background:var(--gold);color:#2a1c0c;margin-top:12px;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.red{background:var(--red);color:#fff}
+  .btn.green{background:var(--green);color:#10281a}
+  .btn.small{padding:12px;font-size:17px}
+  .btn:disabled{opacity:.4}
+  .add{background:var(--gold);color:#2a1c0c;padding:14px 18px;font-size:18px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chip{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:8px;font-size:17px}
+  .chip button{background:#4a3a2b;color:var(--muted);width:26px;height:26px;border-radius:50%;font-size:15px;line-height:1}
+  .hint{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.6}
+  .modes{display:grid;gap:10px}
+  .mode{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;color:var(--text);display:flex;gap:14px;align-items:center;width:100%}
+  .mode:active{border-color:var(--gold)}
+  .mode .ic{font-size:30px;width:52px;height:52px;display:grid;place-items:center;background:var(--card2);border-radius:16px;flex-shrink:0}
+  .mode b{font-size:20px;display:block}
+  .mode span{color:var(--muted);font-size:14px;font-weight:400;line-height:1.5}
+  .sec{color:var(--muted);font-size:15px;font-weight:700;margin:18px 4px 8px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .two .mode{flex-direction:column;text-align:center;gap:6px;padding:14px 8px}
+  .back{background:none;color:var(--muted);font-size:16px;padding:6px 0;margin-bottom:6px}
+  .cats{display:flex;flex-wrap:wrap;gap:8px}
+  .cat{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 16px;border-radius:999px;font-size:17px;font-weight:500}
+  .cat.sel{background:var(--gold);color:#2a1c0c;border-color:var(--gold)}
+  .cat:disabled{opacity:.35}
+  .big{min-height:48vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+    background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px 20px}
+  .big .lbl{color:var(--muted);font-size:18px;line-height:1.6}
+  .big .name{font-size:40px;font-weight:800;color:var(--gold);margin:8px 0}
+  .big .word{font-size:46px;font-weight:800;margin:10px 0;line-height:1.3}
+  .big .spy{font-size:40px;font-weight:800;color:var(--red);margin:10px 0}
+  .big .q{font-size:28px;font-weight:700;line-height:1.5}
+  .taboo{margin-top:14px;display:grid;gap:6px;width:100%;max-width:260px}
+  .taboo div{background:rgba(226,103,79,.15);color:#f1a493;border-radius:10px;padding:8px;font-size:20px;font-weight:700;text-decoration:line-through;text-decoration-thickness:2px}
+  .timer{direction:ltr;unicode-bidi:isolate;font-size:68px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold2);margin:6px 0;line-height:1}
+  .timer.low{color:var(--red)}
+  .timer.mini{font-size:40px}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .opts.one{grid-template-columns:1fr}
+  .opt{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:14px;font-size:18px;border-radius:14px;line-height:1.4}
+  .opt.right{background:var(--green);color:#10281a;border-color:var(--green)}
+  .opt.wrong{background:var(--red);color:#fff;border-color:var(--red)}
+  .opt.picked{background:var(--gold);color:#2a1c0c;border-color:var(--gold)}
+  .scores{display:grid;gap:8px}
+  .score{display:flex;justify-content:space-between;align-items:center;background:var(--card2);padding:10px 14px;border-radius:12px;font-size:17px}
+  .score b{color:var(--gold)}
+  .count{color:var(--muted);font-size:15px;text-align:center;margin-top:12px}
+  .pill{display:inline-block;background:var(--card2);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:14px;margin-bottom:12px}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .team{background:var(--card);border:2px solid var(--line);border-radius:var(--radius);padding:14px}
+  .team.t0{border-color:var(--gold)} .team.t1{border-color:var(--blue)}
+  .team h3{text-align:center}
+  .team.t0 h3{color:var(--gold)} .team.t1 h3{color:var(--blue)}
+  .team div.m{background:var(--card2);border-radius:10px;padding:8px;margin-top:6px;text-align:center;font-size:17px}
+  .tscore{display:flex;justify-content:space-around;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px}
+  .tscore b{display:block;font-size:30px}
+  .tscore .c0{color:var(--gold)} .tscore .c1{color:var(--blue)}
+  .tscore .on{text-decoration:underline;text-underline-offset:6px}
+  .list{display:grid;gap:8px;margin-top:12px}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card2);border-radius:12px;padding:10px 14px;font-size:16px}
+  .item button{background:#4a3a2b;color:var(--muted);width:28px;height:28px;border-radius:50%;flex-shrink:0}
+  .medal{font-size:22px;margin-left:8px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+  .modal.on{display:flex}
+  .modal .card{max-width:420px;width:100%}
+  .flip{animation:flip .45s ease}
+  @keyframes flip{0%{transform:rotateY(90deg) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+  .pop{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+  .shake{animation:shake .5s}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  .tools{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:14px;z-index:5;display:flex;gap:8px;direction:ltr}
+  .sound{background:var(--card);border:1px solid var(--line);color:var(--text);width:44px;height:44px;border-radius:50%;font-size:20px;padding:0}
+  .sound.lng{font-size:15px;font-weight:800;font-family:Tajawal,sans-serif}
+  #pad{width:100%;height:56vh;background:#fbf6ef;border-radius:20px;touch-action:none;display:block;margin-top:6px}
+  .pen{width:34px;height:34px;border-radius:50%;border:3px solid transparent;padding:0}
+  .pen.sel{border-color:var(--text)}
+  #wheel{width:100%;aspect-ratio:1;display:block}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:34px;color:var(--text);z-index:2;text-shadow:0 2px 6px #000}
+  .step{display:flex;align-items:center;gap:8px}
+  .step button{width:38px;height:38px;border-radius:50%;background:#4a3a2b;color:var(--text);font-size:20px}
+  .step b{min-width:44px;text-align:center}
+  .out{opacity:.4;text-decoration:line-through}
+  .live{display:none;text-align:center;margin-top:18px;font-size:18px;color:var(--gold2);font-weight:700}
+  .live b{font-size:24px}
+  .quit{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;z-index:5;background:var(--card);border:1px solid var(--line);
+    color:var(--muted);height:44px;padding:0 16px;border-radius:999px;font-size:16px;display:none}
+  .quit.on{display:block}
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:20}
+  .plus{direction:ltr;position:fixed;font-size:34px;font-weight:800;color:var(--gold);pointer-events:none;animation:up 1s ease forwards;z-index:15}
+  @keyframes up{to{transform:translateY(-80px);opacity:0}}
+
+  /* ===== الوضع النهاري ===== */
+  html[data-theme=light]{--bg:#f7f0e4;--card:#fffaf1;--card2:#f1e6d4;--line:#e3d2b8;--text:#2a1c0c;--muted:#7d6548;--gold:#d99a2b;--gold2:#a86c0c;--red:#d4553d;--green:#4fa66b;--blue:#3f86c0}
+  html[data-theme=light] body{background-image:radial-gradient(circle at 50% -10%,#f1dcb6 0%,transparent 55%)}
+  html[data-theme=light] .chip button,html[data-theme=light] .item button,html[data-theme=light] .step button{background:#e8d9c2;color:#5a4630}
+  html[data-theme=light] .taboo div{color:#b2402b;background:rgba(212,85,61,.12)}
+  html[data-theme=light] .fc-front{background:linear-gradient(160deg,#fff4e0,#f3e3c8)}
+  html[data-theme=light] .glow .name{background-image:linear-gradient(100deg,#a86c0c,#e8b04b,#a86c0c)}
+  html[data-theme=light] .glow::before{background:repeating-conic-gradient(rgba(217,154,43,.16) 0 9deg,transparent 9deg 18deg)}
+  html[data-theme=light] .modal{background:rgba(60,40,20,.35)}
+  html[data-theme=light] .btn.ghost{border-color:#d9c5a6}
+  html[data-theme=light] .mode{box-shadow:0 2px 10px rgba(120,80,30,.08)}
+
+  /* ===== الهوية ===== */
+  h1,h2,.name,.logo,.tab,.mode b{font-family:'Reem Kufi','Tajawal',sans-serif;word-spacing:.18em}
+  h1{font-weight:700}
+  .sadu{height:22px;background:#1a1410 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Crect width='40' height='20' fill='%238e2b22'/%3E%3Cpath d='M0 0L10 10L20 0L30 10L40 0Z' fill='%23f6ece0'/%3E%3Cpath d='M0 20L10 10L20 20L30 10L40 20Z' fill='%231a1410'/%3E%3Cpath d='M10 6L14 10L10 14L6 10ZM30 6L34 10L30 14L26 10Z' fill='%23e8b04b'/%3E%3C/svg%3E") repeat-x center/40px 20px;
+    border-top:3px solid #f6ece0;border-bottom:3px solid #8e2b22}
+  .sadu.thin{height:14px;background-size:28px 14px;border-width:2px;border-radius:4px;margin:-8px 30px 20px;opacity:.9}
+  .homehead{display:flex;align-items:center;justify-content:center;gap:6px}
+  .homehead h1{margin:0}
+  .dallah.mini{width:46px;height:64px}
+  .dallah.mini .steam path{animation:steam 2.4s ease-in-out infinite}
+  .screen{animation:in .32s cubic-bezier(.2,.8,.2,1)}
+  @keyframes in{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+
+  /* ===== الافتتاحية ===== */
+  #splash{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 35%,#3d2a16 0%,#1a1410 62%);display:flex;flex-direction:column;justify-content:space-between;
+    cursor:pointer;transition:opacity .5s ease,transform .5s ease}
+  #splash.bye{opacity:0;transform:scale(1.08);pointer-events:none}
+  #splash .sadu{height:30px;background-size:48px 24px}
+  .s-top{margin-top:env(safe-area-inset-top);animation:slideR 1s cubic-bezier(.2,.8,.2,1) both}
+  .s-bot{margin-bottom:env(safe-area-inset-bottom);animation:slideL 1s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes slideR{from{transform:translateX(100%)}to{transform:none}}
+  @keyframes slideL{from{transform:translateX(-100%)}to{transform:none}}
+  .splash-in{text-align:center;padding:0 24px}
+  #splash .dallah{width:150px;height:206px;filter:drop-shadow(0 10px 30px rgba(232,176,75,.35));
+    animation:drop .9s .25s cubic-bezier(.2,1.4,.4,1) both, pour 3.2s 1.3s ease-in-out infinite;transform-origin:50% 95%}
+  @keyframes drop{from{opacity:0;transform:translateY(-80px) scale(.7)}to{opacity:1;transform:none}}
+  @keyframes pour{0%,100%{transform:rotate(0)}45%,60%{transform:rotate(-14deg)}}
+  .dallah .steam path{animation:steam 2.4s ease-in-out infinite;opacity:0}
+  .dallah .steam path:nth-child(2){animation-delay:.8s}.dallah .steam path:nth-child(3){animation-delay:1.6s}
+  @keyframes steam{0%{opacity:0;transform:translateY(8px)}35%{opacity:.75}100%{opacity:0;transform:translateY(-14px)}}
+  .logo{font-size:84px;font-weight:700;line-height:1.1;margin-top:6px;
+    background:linear-gradient(100deg,#b9822c 20%,#fff3d6 40%,#e8b04b 55%,#b9822c 80%);background-size:250% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;animation:rise .8s .6s both, shine 3s 1.4s linear infinite}
+  @keyframes shine{from{background-position:120% 0}to{background-position:-130% 0}}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .tag{color:var(--muted);font-size:19px;animation:rise .7s .9s both}
+  .feat{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px 0 0}
+  .feat span{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:15px;opacity:0;animation:rise .5s both}
+  .feat span:nth-child(1){animation-delay:1.1s}.feat span:nth-child(2){animation-delay:1.2s}.feat span:nth-child(3){animation-delay:1.3s}.feat span:nth-child(4){animation-delay:1.4s}
+  .tapgo{margin:30px auto 0;display:inline-block;background:var(--gold);color:#2a1c0c;font-weight:800;font-size:20px;padding:15px 34px;border-radius:999px;
+    box-shadow:0 0 0 0 rgba(232,176,75,.6);animation:rise .6s 1.6s both, pulse 1.8s 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,176,75,.55)}70%{box-shadow:0 0 0 18px rgba(232,176,75,0)}100%{box-shadow:0 0 0 0 rgba(232,176,75,0)}}
+  .stars{position:absolute;inset:0;pointer-events:none;opacity:.7;
+    background-image:radial-gradient(1.5px 1.5px at 12% 22%,#fff8 50%,transparent),radial-gradient(1.5px 1.5px at 78% 18%,#fff8 50%,transparent),
+    radial-gradient(2px 2px at 30% 70%,#f3c86e99 50%,transparent),radial-gradient(1.5px 1.5px at 88% 62%,#fff7 50%,transparent),
+    radial-gradient(2px 2px at 62% 84%,#f3c86e88 50%,transparent),radial-gradient(1.5px 1.5px at 8% 88%,#fff6 50%,transparent),
+    radial-gradient(1.5px 1.5px at 50% 12%,#fff7 50%,transparent),radial-gradient(2px 2px at 92% 38%,#f3c86e77 50%,transparent);
+    animation:tw 3s ease-in-out infinite alternate}
+  @keyframes tw{from{opacity:.35}to{opacity:.85}}
+
+  /* ===== القائمة ===== */
+  .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px;margin-bottom:14px;position:sticky;top:calc(env(safe-area-inset-top) + 4px);z-index:4}
+  .tab{flex:1;background:none;color:var(--muted);padding:11px 6px;border-radius:999px;font-size:17px;font-weight:600}
+  .tab.on{background:var(--gold);color:#2a1c0c}
+  .tabp{display:none}.tabp.on{display:grid}
+  .grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .grid .mode{flex-direction:column;text-align:center;align-items:center;gap:8px;padding:16px 10px 14px;border-top:3px solid var(--c,var(--gold));
+    background:linear-gradient(180deg,color-mix(in srgb,var(--c,#e8b04b) 12%,var(--card)) 0%,var(--card) 70%);animation:pop .35s both}
+  .grid .mode .ic{width:58px;height:58px;font-size:32px;background:color-mix(in srgb,var(--c,#e8b04b) 22%,var(--card2));border-radius:18px}
+  .grid .mode b{font-size:18px}
+  .grid .mode span{font-size:13px;line-height:1.45}
+  .grid .mode:nth-child(2){animation-delay:.04s}.grid .mode:nth-child(3){animation-delay:.08s}.grid .mode:nth-child(4){animation-delay:.12s}
+  .grid .mode:nth-child(5){animation-delay:.16s}.grid .mode:nth-child(6){animation-delay:.2s}.grid .mode:nth-child(7){animation-delay:.24s}.grid .mode:nth-child(8){animation-delay:.28s}
+
+  /* ===== كرت الكشف ===== */
+  .flipcard{perspective:1200px;height:54vh;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  .fc-inner{position:relative;height:100%;transition:transform .45s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+  .flipcard.open .fc-inner{transform:rotateY(180deg)}
+  .fc-front,.fc-back{position:absolute;inset:0;min-height:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .fc-back{transform:rotateY(180deg)}
+  .fc-front{background:linear-gradient(160deg,#3a2a1a,#271e17);border:2px solid var(--gold)}
+  .fc-front .sadu{position:absolute;left:0;right:0;height:18px;background-size:36px 18px}
+  .fc-front .sadu.a{top:0;border-radius:26px 26px 0 0}.fc-front .sadu.b{bottom:0;border-radius:0 0 26px 26px}
+  .hold{font-size:64px;animation:pulseS 1.4s infinite}
+  @keyframes pulseS{50%{transform:scale(1.15)}}
+
+  /* ===== شاشات الفوز ===== */
+  .glow{position:relative;overflow:hidden}
+  .glow::before{content:'';position:absolute;inset:-60%;background:repeating-conic-gradient(rgba(232,176,75,.13) 0 9deg,transparent 9deg 18deg);animation:spin 14s linear infinite;z-index:0}
+  .glow>*{position:relative;z-index:1}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .crown{font-size:54px;line-height:1;animation:pop .6s .15s both}
+  .glow .name{font-size:50px;background:linear-gradient(100deg,#e8b04b,#fff3d6,#e8b04b);background-size:200%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 2.5s linear infinite}
+</style>
+</head>
+<body>
+<div class="tools"><button class="sound" id="snd" aria-label="Sound" data-silent="1">🔊</button><button class="sound" id="thm" aria-label="Day mode">☀️</button><button class="sound lng" id="lng" aria-label="عربي">ع</button></div>
+<button class="quit" id="quit" aria-label="Exit">✕ Exit</button>
+<canvas id="fx"></canvas>
+<div id="splash" role="button" aria-label="Start">
+  <div class="stars"></div>
+  <div class="sadu s-top"></div>
+  <div class="splash-in">
+    <svg class="dallah" viewBox="0 0 160 220" aria-hidden="true">
+  <defs>
+    <linearGradient id="dam" x1="0" x2="1">
+      <stop offset="0" stop-color="#6e4510"/><stop offset=".18" stop-color="#b47a22"/><stop offset=".38" stop-color="#f3cd78"/>
+      <stop offset=".48" stop-color="#fff2cc"/><stop offset=".6" stop-color="#e2a948"/><stop offset=".85" stop-color="#94621a"/><stop offset="1" stop-color="#5c390c"/>
+    </linearGradient>
+    <linearGradient id="dad" x1="0" x2="1"><stop offset="0" stop-color="#5c390c"/><stop offset=".45" stop-color="#c58e33"/><stop offset="1" stop-color="#4a2e09"/></linearGradient>
+    <linearGradient id="das" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a4d12"/><stop offset=".55" stop-color="#f6d58c"/><stop offset="1" stop-color="#9c6a1c"/></linearGradient>
+    <radialGradient id="dah" cx=".35" cy=".35" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <ellipse cx="90" cy="210" rx="44" ry="6" fill="#000" opacity=".35"/>
+  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="2.6" stroke-linecap="round">
+    <path d="M14 64 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M24 62 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M5 66 q-6 -8 0 -16 q6 -8 0 -16"/></g>
+  <!-- المنقار -->
+  <path d="M60 178 C34 164 18 124 11 76 C10 71 14 70 17 73 L20 78 C26 118 42 146 66 156 Z" fill="url(#das)"/>
+  <path d="M11 76 C9 70 13 67 17 71 L22 79 L17 80 Z" fill="#fff2cc" opacity=".7"/>
+  <!-- المقبض -->
+  <path d="M112 108 C138 98 150 128 140 158 C135 172 128 180 118 182" fill="none" stroke="url(#dad)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M112 108 C138 98 150 128 140 158" fill="none" stroke="#f6d58c" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+  <circle cx="139" cy="112" r="4.5" fill="url(#dam)"/>
+  <!-- القاعدة -->
+  <path d="M60 198 L120 198 L128 207 Q90 213 52 207 Z" fill="url(#dam)"/>
+  <!-- البطن -->
+  <path d="M64 198 C44 186 42 150 62 132 L118 132 C138 150 136 186 116 198 Z" fill="url(#dam)"/>
+  <ellipse cx="74" cy="160" rx="10" ry="22" fill="url(#dah)"/>
+  <path d="M54 174 Q90 185 126 174" fill="none" stroke="#6e4510" stroke-width="1.6" opacity=".55"/>
+  <path d="M50 158 Q90 168 130 158" fill="none" stroke="#6e4510" stroke-width="1.2" opacity=".4"/>
+  <!-- الحزام المنقوش -->
+  <rect x="60" y="125" width="60" height="8" rx="2" fill="url(#dad)"/>
+  <g fill="#ffe9b0" opacity=".85"><circle cx="64.0" cy="129" r="1.3"/><circle cx="70.5" cy="129" r="1.3"/><circle cx="77.0" cy="129" r="1.3"/><circle cx="83.5" cy="129" r="1.3"/><circle cx="90.0" cy="129" r="1.3"/><circle cx="96.5" cy="129" r="1.3"/><circle cx="103.0" cy="129" r="1.3"/><circle cx="109.5" cy="129" r="1.3"/><circle cx="116.0" cy="129" r="1.3"/></g>
+  <!-- الصدر -->
+  <path d="M64 125 C69 110 75 99 80 92 L100 92 C105 99 111 110 116 125 Z" fill="url(#dam)"/>
+  <path d="M70 118 L110 118" stroke="#6e4510" stroke-width="1.2" opacity=".45"/>
+  <ellipse cx="90" cy="91" rx="15" ry="3.5" fill="url(#dad)"/>
+  <!-- الرقبة -->
+  <path d="M81 90 L99 90 L97 63 L83 63 Z" fill="url(#dam)"/>
+  <path d="M83 78 L97 78 M83.5 72 L96.5 72" stroke="#6e4510" stroke-width="1" opacity=".5"/>
+  <!-- الفوهة والغطاء -->
+  <path d="M77 63 L103 63 L108 56 L72 56 Z" fill="url(#dad)"/>
+  <path d="M73 56 C75 40 105 40 107 56 Z" fill="url(#dam)"/>
+  <ellipse cx="90" cy="43" rx="9" ry="2.6" fill="url(#dad)"/>
+  <circle cx="90" cy="37" r="4.6" fill="url(#dam)"/>
+  <circle cx="90" cy="29" r="3.3" fill="url(#dam)"/>
+  <path d="M88.2 27 L90 13 L91.8 27 Z" fill="url(#dam)"/>
+  <circle cx="88.5" cy="35.5" r="1.4" fill="#fff" opacity=".7"/>
+</svg>
+    <div class="logo">الجلسة</div>
+    <div class="tag">Party games for your gathering… on one phone</div>
+    <div class="feat"><span>🕵️ The Spy</span><span>🤐 Taboo</span><span>🎨 Draw It</span><span>☕ Who Pours?</span></div>
+    <div class="tapgo">Tap to start the night</div>
+  </div>
+  <div class="sadu s-bot"></div>
+</div>
+<div class="wrap">
+
+  <!-- اللاعبين -->
+  <section class="screen on" id="s-home">
+    <div class="homehead"><svg class="dallah mini" viewBox="0 0 160 220" aria-hidden="true">
+  <defs>
+    <linearGradient id="dbm" x1="0" x2="1">
+      <stop offset="0" stop-color="#6e4510"/><stop offset=".18" stop-color="#b47a22"/><stop offset=".38" stop-color="#f3cd78"/>
+      <stop offset=".48" stop-color="#fff2cc"/><stop offset=".6" stop-color="#e2a948"/><stop offset=".85" stop-color="#94621a"/><stop offset="1" stop-color="#5c390c"/>
+    </linearGradient>
+    <linearGradient id="dbd" x1="0" x2="1"><stop offset="0" stop-color="#5c390c"/><stop offset=".45" stop-color="#c58e33"/><stop offset="1" stop-color="#4a2e09"/></linearGradient>
+    <linearGradient id="dbs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a4d12"/><stop offset=".55" stop-color="#f6d58c"/><stop offset="1" stop-color="#9c6a1c"/></linearGradient>
+    <radialGradient id="dbh" cx=".35" cy=".35" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <ellipse cx="90" cy="210" rx="44" ry="6" fill="#000" opacity=".35"/>
+  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="2.6" stroke-linecap="round">
+    <path d="M14 64 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M24 62 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M5 66 q-6 -8 0 -16 q6 -8 0 -16"/></g>
+  <!-- المنقار -->
+  <path d="M60 178 C34 164 18 124 11 76 C10 71 14 70 17 73 L20 78 C26 118 42 146 66 156 Z" fill="url(#dbs)"/>
+  <path d="M11 76 C9 70 13 67 17 71 L22 79 L17 80 Z" fill="#fff2cc" opacity=".7"/>
+  <!-- المقبض -->
+  <path d="M112 108 C138 98 150 128 140 158 C135 172 128 180 118 182" fill="none" stroke="url(#dbd)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M112 108 C138 98 150 128 140 158" fill="none" stroke="#f6d58c" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+  <circle cx="139" cy="112" r="4.5" fill="url(#dbm)"/>
+  <!-- القاعدة -->
+  <path d="M60 198 L120 198 L128 207 Q90 213 52 207 Z" fill="url(#dbm)"/>
+  <!-- البطن -->
+  <path d="M64 198 C44 186 42 150 62 132 L118 132 C138 150 136 186 116 198 Z" fill="url(#dbm)"/>
+  <ellipse cx="74" cy="160" rx="10" ry="22" fill="url(#dbh)"/>
+  <path d="M54 174 Q90 185 126 174" fill="none" stroke="#6e4510" stroke-width="1.6" opacity=".55"/>
+  <path d="M50 158 Q90 168 130 158" fill="none" stroke="#6e4510" stroke-width="1.2" opacity=".4"/>
+  <!-- الحزام المنقوش -->
+  <rect x="60" y="125" width="60" height="8" rx="2" fill="url(#dbd)"/>
+  <g fill="#ffe9b0" opacity=".85"><circle cx="64.0" cy="129" r="1.3"/><circle cx="70.5" cy="129" r="1.3"/><circle cx="77.0" cy="129" r="1.3"/><circle cx="83.5" cy="129" r="1.3"/><circle cx="90.0" cy="129" r="1.3"/><circle cx="96.5" cy="129" r="1.3"/><circle cx="103.0" cy="129" r="1.3"/><circle cx="109.5" cy="129" r="1.3"/><circle cx="116.0" cy="129" r="1.3"/></g>
+  <!-- الصدر -->
+  <path d="M64 125 C69 110 75 99 80 92 L100 92 C105 99 111 110 116 125 Z" fill="url(#dbm)"/>
+  <path d="M70 118 L110 118" stroke="#6e4510" stroke-width="1.2" opacity=".45"/>
+  <ellipse cx="90" cy="91" rx="15" ry="3.5" fill="url(#dbd)"/>
+  <!-- الرقبة -->
+  <path d="M81 90 L99 90 L97 63 L83 63 Z" fill="url(#dbm)"/>
+  <path d="M83 78 L97 78 M83.5 72 L96.5 72" stroke="#6e4510" stroke-width="1" opacity=".5"/>
+  <!-- الفوهة والغطاء -->
+  <path d="M77 63 L103 63 L108 56 L72 56 Z" fill="url(#dbd)"/>
+  <path d="M73 56 C75 40 105 40 107 56 Z" fill="url(#dbm)"/>
+  <ellipse cx="90" cy="43" rx="9" ry="2.6" fill="url(#dbd)"/>
+  <circle cx="90" cy="37" r="4.6" fill="url(#dbm)"/>
+  <circle cx="90" cy="29" r="3.3" fill="url(#dbm)"/>
+  <path d="M88.2 27 L90 13 L91.8 27 Z" fill="url(#dbm)"/>
+  <circle cx="88.5" cy="35.5" r="1.4" fill="#fff" opacity=".7"/>
+</svg><h1>الجلسة</h1></div>
+    <p class="sub">Party games on one phone</p>
+    <div class="sadu thin"></div>
+    <div class="card">
+      <h3>Who's playing?</h3>
+      <form class="row" id="addForm">
+        <input type="text" id="nameIn" placeholder="Player name" maxlength="16" autocomplete="off">
+        <button class="add" type="submit">Add</button>
+      </form>
+      <div class="chips" id="chips"></div>
+      <div class="hint" id="pHint"></div>
+    </div>
+    <button class="btn" id="toModes" disabled>Let's play</button>
+    <div class="live" id="live"></div>
+    <p class="count" style="opacity:.6">Version 11 · <a href="https://cumds.github.io/jalsa/privacy.html#en" style="color:inherit">Privacy policy</a></p>
+  </section>
+
+  <!-- القائمة -->
+  <section class="screen" id="s-modes">
+    <button class="back" data-go="s-home">← Players</button>
+    <h2>What are we playing?</h2>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-t="g-solo">👤 Solo</button>
+      <button class="tab" data-t="g-team">👥 Teams</button>
+      <button class="tab" data-t="g-tools">🧰 Tools</button>
+    </div>
+    <div class="grid tabp on" id="g-solo">
+      <button class="mode" data-go="s-spySetup"><div class="ic">🕵️</div><div><b>The Spy</b><span>Everyone knows the word except one. Catch them first!</span></div></button>
+      <button class="mode" data-pack="who"><div class="ic">👉</div><div><b>Who's Most Likely?</b><span>A question — on three, everyone points</span></div></button>
+      <button class="mode" data-pack="dare"><div class="ic">🔥</div><div><b>Dares</b><span>Take turns, do the dare, score a point</span></div></button>
+      <button class="mode" id="startTL"><div class="ic">🤥</div><div><b>Truth or Lie?</b><span>Say something about yourself — they guess</span></div></button>
+      <button class="mode" id="startRace"><div class="ic">⚡</div><div><b>Letter Race</b><span>Topic + letter. Say a word fast or you're out</span></div></button>
+      <button class="mode" id="startDraw"><div class="ic">🎨</div><div><b>Draw It</b><span>Draw on the screen, others guess</span></div></button>
+      <button class="mode" id="startStory"><div class="ic">📖</div><div><b>Group Story</b><span>Continue the story using a forced word</span></div></button>
+      <button class="mode" data-go="s-lettersSetup"><div class="ic">✏️</div><div><b>Name · Animal · Thing</b><span>A letter, a timer, pen and paper</span></div></button>
+    </div>
+    <div class="grid tabp" id="g-team">
+      <button class="mode" data-team="taboo"><div class="ic">🤐</div><div><b>Taboo</b><span>Explain the word without the forbidden ones</span></div></button>
+      <button class="mode" data-team="act"><div class="ic">🎭</div><div><b>Charades</b><span>Act it out silently, your team guesses</span></div></button>
+      <button class="mode" data-team="quiz"><div class="ic">🏆</div><div><b>Team Quiz</b><span>Questions about Saudi Arabia</span></div></button>
+    </div>
+    <div class="grid tabp" id="g-tools">
+      <button class="mode" id="toWheel"><div class="ic">☕</div><b>Who Pours Coffee?</b><span>Spin the wheel to pick someone</span></button>
+      <button class="mode" data-go="s-baloot"><div class="ic">🃏</div><b>Baloot Scores</b><span>Us vs Them, no paper needed</span></button>
+    </div>
+    <div class="two">
+      <button class="mode" data-go="s-custom"><div class="ic">✍️</div><b>Your Words</b><span>Add your own words & questions</span></button>
+      <button class="mode" id="toTally"><div class="ic">🥇</div><b>Tonight's Board</b><span>Who won the most</span></button>
+    </div>
+    <button class="btn ghost" id="toShare" style="margin-top:14px">📲 Share the game with friends</button>
+  </section>
+
+  <!-- الدخيل: الإعداد -->
+  <section class="screen" id="s-spySetup">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2>The Spy</h2>
+    <div class="card"><h3>Category</h3><div class="cats" id="cats"></div></div>
+    <div class="card"><h3>Number of spies</h3><div class="cats" id="spyN"></div><div class="hint" id="spyNHint"></div></div>
+    <div class="card"><h3>Discussion time</h3><div class="cats" id="times"></div></div>
+    <div class="card hint" style="margin-top:0">
+      Everyone sees the word in turn and passes the phone. The spy doesn't know it.
+      Ask each other questions about the word without saying it, then vote. If the spy is caught, they get one chance to guess the word and win.
+    </div>
+    <button class="btn" id="spyStart">Start round</button>
+  </section>
+
+  <section class="screen" id="s-pass">
+    <div class="big" id="passBox">
+      <div class="lbl">Pass the phone to</div>
+      <div class="name" id="passName"></div>
+      <div class="lbl" style="margin-top:8px">No peeking, everyone else 👀</div>
+    </div>
+    <button class="btn" id="reveal">See your word</button>
+    <div class="count" id="passCount"></div>
+  </section>
+
+  <section class="screen" id="s-word">
+    <div class="flipcard" id="flipCard">
+      <div class="fc-inner">
+        <div class="big fc-front" id="wordFront"></div>
+        <div class="big fc-back" id="wordBox"></div>
+      </div>
+    </div>
+    <button class="btn" id="hideWord" disabled>Got it — pass the phone</button>
+  </section>
+
+  <section class="screen" id="s-talk">
+    <div class="big">
+      <div class="lbl">Asks the first question</div>
+      <div class="name" id="starter"></div>
+      <div class="timer" id="timer"></div>
+      <div class="lbl" id="catLbl"></div>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="tToggle">Pause</button>
+      <button class="btn" id="toVote" style="flex:2">Vote & reveal</button>
+    </div>
+  </section>
+
+  <section class="screen" id="s-vote">
+    <h2 id="voteTitle">Who is the spy?</h2>
+    <p class="hint" id="voteHint" style="margin-top:-8px;margin-bottom:14px"></p>
+    <div class="opts one" id="voteList"></div>
+    <button class="btn" id="voteGo" style="display:none">Reveal</button>
+  </section>
+
+  <section class="screen" id="s-result">
+    <div class="big" id="resultBox" style="min-height:auto"></div>
+    <div id="guessArea"></div>
+    <button class="btn" id="spyAgain">New round</button>
+    <button class="btn ghost" data-go="s-modes">Another game</button>
+  </section>
+
+  <!-- اختيار الحزم -->
+  <section class="screen" id="s-packs">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2 id="packsTitle"></h2>
+    <div class="card"><h3>Pick your packs</h3><div class="cats" id="packs"></div><div class="hint" id="packsHint"></div></div>
+    <button class="btn" id="packsGo">Start</button>
+  </section>
+
+  <!-- مين فينا -->
+  <section class="screen" id="s-who">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="big">
+      <div class="pill">On three, everyone points 👉</div>
+      <div class="q" id="whoQ"></div>
+    </div>
+    <button class="btn" id="whoNext">Next question</button>
+  </section>
+
+  <!-- تحدي -->
+  <section class="screen" id="s-dare">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="big" style="min-height:38vh">
+      <div class="lbl">It's the turn of</div>
+      <div class="name" id="dareName"></div>
+      <div class="q" id="dareQ" style="font-size:24px"></div>
+    </div>
+    <div class="row">
+      <button class="btn green" id="dareDone" data-silent="1">Done ✓</button>
+      <button class="btn red" id="dareSkip">Skip</button>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Points</h3><div class="scores" id="scores"></div></div>
+  </section>
+
+  <!-- صح ولا كذب -->
+  <section class="screen" id="s-tl">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="big" style="min-height:38vh">
+      <div class="lbl">It's the turn of</div>
+      <div class="name" id="tlName"></div>
+      <div class="q" id="tlQ" style="font-size:24px"></div>
+      <div class="lbl" style="margin-top:12px;font-size:15px">Tell it true or false — the others vote. Then confess 😏</div>
+    </div>
+    <div class="row">
+      <button class="btn green" id="tlFool" data-silent="1">Fooled them 😎</button>
+      <button class="btn red" id="tlCaught">They caught me</button>
+    </div>
+    <button class="btn ghost small" id="tlSkip">Another topic</button>
+    <div class="card" style="margin-top:16px"><h3>Points</h3><div class="scores" id="tlScores"></div></div>
+  </section>
+
+  <!-- الفرق -->
+  <section class="screen" id="s-teams">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2 id="teamsTitle"></h2>
+    <div class="teams" id="teamsBox"></div>
+    <button class="btn ghost" id="shuffleTeams">🔀 Shuffle teams</button>
+    <div class="card" style="margin-top:14px" id="roundsCard"><h3>Rounds per team</h3><div class="cats" id="roundsSel"></div></div>
+    <p class="hint" id="teamsHint"></p>
+    <button class="btn" id="teamsGo">Start</button>
+  </section>
+
+  <section class="screen" id="s-turn">
+    <div class="tscore" id="tsTurn"></div>
+    <div class="big" style="min-height:40vh">
+      <div class="lbl" id="turnTeam"></div>
+      <div class="name" id="turnName"></div>
+      <div class="lbl" id="turnHint"></div>
+    </div>
+    <button class="btn" id="turnGo">Ready? Go!</button>
+  </section>
+
+  <section class="screen" id="s-play">
+    <div class="bar"><div class="timer mini" id="pTimer"></div><div class="pill" id="pCount" style="margin:0"></div></div>
+    <div class="big" id="pCard" style="min-height:42vh"></div>
+    <div class="row">
+      <button class="btn green" id="pOk" data-silent="1">Got it ✓</button>
+      <button class="btn ghost" id="pSkip">Skip</button>
+    </div>
+    <button class="btn red small" id="pFoul">Said a forbidden word ✗</button>
+  </section>
+
+  <section class="screen" id="s-turnEnd">
+    <div class="big" id="turnEndBox" style="min-height:30vh"></div>
+    <div class="tscore" id="tsEnd" style="margin-top:12px"></div>
+    <button class="btn" id="nextTurn">Next turn</button>
+  </section>
+
+  <section class="screen" id="s-quiz">
+    <div class="tscore" id="tsQuiz"></div>
+    <div class="card">
+      <div class="pill" id="qMeta"></div>
+      <div style="font-size:23px;font-weight:700;line-height:1.5" id="qText"></div>
+      <div class="opts one" id="qOpts"></div>
+    </div>
+    <button class="btn" id="qNext" style="display:none">Next</button>
+  </section>
+
+  <section class="screen" id="s-match">
+    <div class="big glow" id="matchBox" style="min-height:36vh"></div>
+    <div class="tscore" id="tsMatch" style="margin-top:12px"></div>
+    <button class="btn" id="matchAgain">Rematch</button>
+    <button class="btn ghost" data-go="s-modes">Another game</button>
+  </section>
+
+  <!-- سباق الحروف -->
+  <section class="screen" id="s-race">
+    <div class="card" style="text-align:center">
+      <div class="lbl hint" style="margin:0">Topic</div>
+      <div style="font-size:26px;font-weight:800" id="raceTopic"></div>
+      <div class="hint" style="margin-top:6px">Starts with</div>
+      <div style="font-size:64px;font-weight:800;color:var(--gold);line-height:1.1" id="raceLetter"></div>
+    </div>
+    <div class="big" style="min-height:30vh">
+      <div class="lbl">It's the turn of</div>
+      <div class="name" id="raceName"></div>
+      <div class="timer" id="raceTimer"></div>
+    </div>
+    <div class="row">
+      <button class="btn green" id="raceOk" data-silent="1">Said it ✓</button>
+      <button class="btn red" id="raceOut">Out ✗</button>
+    </div>
+    <button class="btn ghost small" id="raceNew">New topic & letter</button>
+    <p class="hint" id="raceLeft" style="text-align:center"></p>
+  </section>
+
+  <!-- ارسم وخمّن -->
+  <section class="screen" id="s-drawPass">
+    <div class="big" id="drawPassBox">
+      <div class="lbl">The artist</div>
+      <div class="name" id="drawName"></div>
+      <div class="lbl">Take the phone — no peeking, everyone else 👀</div>
+    </div>
+    <button class="btn" id="drawSee">See the word</button>
+    <div class="card" style="margin-top:16px"><h3>Points</h3><div class="scores" id="drawScores"></div></div>
+  </section>
+  <section class="screen" id="s-drawWord">
+    <div class="big"><div class="lbl">Draw</div><div class="word" id="drawWord"></div><div class="lbl">No letters or numbers 😉</div></div>
+    <button class="btn" id="drawGo">Ready — start drawing</button>
+  </section>
+  <section class="screen" id="s-draw">
+    <div class="bar"><div class="timer mini" id="drawTimer"></div>
+      <div class="row" style="gap:6px" id="pens"></div></div>
+    <canvas id="pad"></canvas>
+    <div class="row" style="margin-top:4px">
+      <button class="btn green" id="drawGot">Someone got it ✓</button>
+      <button class="btn ghost" id="drawGive">Nobody got it</button>
+    </div>
+  </section>
+  <section class="screen" id="s-drawWho">
+    <h2>Who guessed it?</h2>
+    <p class="hint" style="margin-top:-8px">They and the artist each get a point</p>
+    <div class="opts one" id="drawWhoList"></div>
+  </section>
+
+  <!-- قصة جماعية -->
+  <section class="screen" id="s-story">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="card" id="storyStartBox">
+      <div class="pill">The story begins</div>
+      <div style="font-size:21px;line-height:1.7;font-weight:500" id="storyStart"></div>
+    </div>
+    <div class="big" style="min-height:34vh">
+      <div class="lbl">It's the turn of</div>
+      <div class="name" id="storyName"></div>
+      <div class="lbl">Add one sentence — and you must use the word</div>
+      <div class="word" style="font-size:38px;color:var(--gold2)" id="storyWord"></div>
+    </div>
+    <button class="btn" id="storyNext">Next</button>
+    <button class="btn ghost small" id="storyNew">New story</button>
+    <p class="count" id="storyCount"></p>
+  </section>
+
+  <!-- إنسان حيوان نبات جماد -->
+  <section class="screen" id="s-lettersSetup">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2>Name · Animal · Thing</h2>
+    <div class="card hint" style="margin-top:0">
+      Grab pen and paper. A letter appears — write a word starting with it for each column: <b>Name, Animal, Plant, Thing, Country</b>.
+      The first to finish shouts "Stop!", or the timer ends it.<br>
+      Scoring: unique word <b>10</b>, shared word <b>5</b>, empty <b>0</b>.
+    </div>
+    <div class="card"><h3>Time</h3><div class="cats" id="lettersTimes"></div></div>
+    <button class="btn" id="lettersStart">Start</button>
+  </section>
+  <section class="screen" id="s-letters">
+    <div class="big">
+      <div class="lbl">The letter</div>
+      <div style="font-size:120px;font-weight:800;color:var(--gold);line-height:1.1" id="lettersLetter"></div>
+      <div class="lbl">Name · Animal · Plant · Thing · Country</div>
+      <div class="timer" id="lettersTimer"></div>
+    </div>
+    <button class="btn red" id="lettersStop">Stop! ✋</button>
+  </section>
+  <section class="screen" id="s-lettersScore">
+    <h2>How did everyone do?</h2>
+    <p class="hint" style="margin-top:-8px">Compare papers and enter this round's points</p>
+    <div class="scores" id="lettersRows"></div>
+    <button class="btn" id="lettersSave">Save round</button>
+  </section>
+  <section class="screen" id="s-lettersTotal">
+    <h2>Total after <span id="lettersRoundN"></span></h2>
+    <div class="scores" id="lettersTotals"></div>
+    <button class="btn" id="lettersAgain">New letter</button>
+    <button class="btn ghost" id="lettersEnd">End game & crown the winner</button>
+  </section>
+
+  <!-- فوز عام -->
+  <section class="screen" id="s-win">
+    <div class="big glow" id="winBox" style="min-height:40vh"></div>
+    <button class="btn" id="winAgain">Play again</button>
+    <button class="btn ghost" data-go="s-modes">Another game</button>
+  </section>
+
+  <!-- العجلة -->
+  <section class="screen" id="s-wheel">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="cats" id="wheelQs" style="margin-bottom:12px"></div>
+    <div style="position:relative">
+      <div class="pointer">▼</div>
+      <canvas id="wheel"></canvas>
+    </div>
+    <div class="live" id="wheelRes" style="display:block;min-height:34px;font-size:24px"></div>
+    <button class="btn" id="spin">Spin 🎡</button>
+  </section>
+
+  <!-- البلوت -->
+  <section class="screen" id="s-baloot">
+    <button class="back" data-go="s-modes">← Games</button>
+    <div class="tscore" style="padding:18px">
+      <div class="c0"><span>Us</span><b style="font-size:48px" id="bUs">0</b></div>
+      <div class="c1"><span>Them</span><b style="font-size:48px" id="bThem">0</b></div>
+    </div>
+    <div class="card">
+      <input type="text" inputmode="numeric" id="bIn" placeholder="Hand points" maxlength="3" autocomplete="off" style="width:100%;text-align:center;font-size:26px">
+      <div class="row">
+        <button class="btn" id="bAddUs">+ Us</button>
+        <button class="btn" id="bAddThem" style="background:var(--blue);color:#0c1d2a">+ Them</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost small" id="bUndo">Undo</button>
+        <button class="btn ghost small" id="bReset">New game</button>
+      </div>
+      <div class="hint" id="bTarget"></div>
+    </div>
+    <div class="list" id="bHist"></div>
+  </section>
+
+  <!-- المشاركة -->
+  <section class="screen" id="s-share">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2>Share the game</h2>
+    <div class="card" style="text-align:center">
+      <p class="hint" style="margin-top:0">Have your friends scan this with their phone camera</p>
+      <canvas id="qr" style="background:#fff;border-radius:16px;padding:12px;width:220px;height:220px"></canvas>
+      <div style="direction:ltr;margin-top:10px;font-weight:700" id="shareUrl"></div>
+    </div>
+    <a class="btn green" id="waLink" href="#" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Send on WhatsApp</a>
+    <button class="btn ghost" id="copyLink">Copy link</button>
+  </section>
+
+  <!-- بطاقة الفائز -->
+  <section class="screen" id="s-card">
+    <button class="back" id="cardBack">← Tonight's Board</button>
+    <img id="cardImg" alt="Winner card" style="width:100%;border-radius:20px;display:block">
+    <button class="btn" id="cardShare">Share the card</button>
+    <p class="hint" style="text-align:center">Or long-press the image to save it</p>
+  </section>
+
+  <!-- كلماتكم -->
+  <section class="screen" id="s-custom">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2>Your Words</h2>
+    <div class="cats" id="cTabs" style="margin-bottom:14px"></div>
+    <div class="card">
+      <form class="row" id="cForm">
+        <input type="text" id="cIn" maxlength="80" autocomplete="off">
+        <button class="add" type="submit">Add</button>
+      </form>
+      <div class="hint" id="cHint"></div>
+      <div class="list" id="cList"></div>
+    </div>
+    <p class="hint">Saved on your phone only — never shared.</p>
+  </section>
+
+  <!-- سجل الليلة -->
+  <section class="screen" id="s-tally">
+    <button class="back" data-go="s-modes">← Games</button>
+    <h2>Tonight's Board 🥇</h2>
+    <p class="hint" style="margin-top:-8px">Every win in any game counts here</p>
+    <div class="scores" id="tallyList"></div>
+    <button class="btn" id="toCard">📸 Winner card</button>
+    <button class="btn ghost" id="tallyReset">Start a new night</button>
+  </section>
+</div>
+
+<div class="modal" id="modal"><div class="card"><div id="modalTxt" style="font-size:19px;line-height:1.6"></div>
+  <div class="row"><button class="btn ghost" id="modalNo" style="display:none">No</button><button class="btn" id="modalOk">OK</button></div></div></div>
+
+<script>
+// ================= المحتوى =================
+const CATS = {
+  "Food": ["Kabsa","Mandi","Jareesh","Margoog","Shawarma","Burger","Pizza","Falafel","Hummus","Samosa","Luqaimat","Kunafa","Sushi","Biryani","Pasta","Dates","Fries","Ice cream"],
+  "Places": ["Airport","Hospital","Desert camp","School","Mall","Beach","Barber shop","Car wash","Gas station","Stadium","Cinema","University","Grocery store","Hotel","Restaurant","Park","Pharmacy","Gym"],
+  "Jobs": ["Doctor","Teacher","Pilot","Engineer","Chef","Barber","Driver","Lawyer","Mechanic","Photographer","Programmer","Carpenter","Nurse","Firefighter","Pharmacist","News anchor","Security guard","Farmer"],
+  "At home": ["Air conditioner","Fridge","Coffee pot","Incense burner","TV","Sofa","Carpet","Fan","Oven","Washing machine","Remote","Pillow","Mirror","Wardrobe","Charger","Thermos","Vacuum","Wall clock"],
+  "Animals": ["Camel","Falcon","Lizard","Cat","Horse","Sheep","Wolf","Lion","Elephant","Giraffe","Penguin","Crocodile","Monkey","Chicken","Rabbit","Whale","Ostrich","Fox"],
+  "In the car": ["Steering wheel","Tire","Mirror","Seatbelt","Horn","Wipers","Dashboard","Headlights","Trunk","Brakes","Gear stick","Gas tank","Car AC","Radio","Driver seat","Engine"],
+  "Drinks": ["Arabic coffee","Tea","Milk","Orange juice","Karak","Sahlab","Laban","Zamzam water","Lemon mint","Mojito","Latte","Sobia","Jallab","Tamarind","Cola","Green tea","Cappuccino","Milkshake"],
+  "Clothes": ["Thobe","Shemagh","Igal","Bisht","Abaya","Cap","Farwa","Sandals","Sneakers","Pajamas","Jacket","Socks","Watch","Sunglasses","Hoodie","Belt","Dress","Coat"],
+  "Ramadan & Eid": ["Lantern","Suhoor","Iftar","Taraweeh","Ramadan cannon","Eidiya","Eid sweets","Dates","Soup","Qatayef","Eid prayer","New clothes","Zakat","Crescent moon","Musaharati","Iftar table","Luqaimat","Gergean"],
+  "Saudi cities": ["Riyadh","Jeddah","Makkah","Madinah","Dammam","Abha","Tabuk","Hail","Taif","AlUla","Jazan","Najran","Qassim","Al-Ahsa","Yanbu","Al-Baha","Al-Jouf","Khobar"],
+  "Travel": ["Passport","Ticket","Suitcase","Boarding pass","Hotel","Taxi","Power bank","Neck pillow","Map","Camera","ATM","Visa","Airport","Airplane","Train","Cruise","Flight delay","Duty free"],
+  "National Day": ["Flag","Ardah dance","Sword","Palm tree","Fireworks","Shemagh","Falcon","Diriyah","Green scarf","Parade","Anthems","Decorations","Corniche","Horses","Coffee pot","Bisht"],
+  "Football": ["Goalkeeper","Goal","Penalty","Offside","Referee","Yellow card","Corner kick","Pitch","Stands","Whistle","Trophy","Coach","Bench","Pass","Free kick","Net","Jersey","Second half"]
+};
+
+const WHO = {
+  "General": ["Who's most likely to fall asleep at the gathering?","Who's always late but says \"I'm here\" from home?","Who'd buy a car first if they became a millionaire?",
+  "Who eats the most?","Who loses their phone while holding it?","Who's the best cook?","Who could survive a week in the desert without a phone?",
+  "Who laughs at their own joke before finishing it?","Who's going to be famous on social media?","Who always forgets plans?",
+  "Who's the biggest show-off?","Who can't keep a secret?","Who argues with the GPS the most?",
+  "Who would we rely on if we got stranded on an island?","Who changes their order the most at restaurants?","Who replies to messages three days later?",
+  "Who'll be the CEO of a big company?","Who exaggerates stories the most?","Who's scared of cockroaches?","Who has the kindest heart?",
+  "Who buys things they don't need?","Who sleeps early like a grandpa?","Who orders delivery the most?","Who always gets lost?",
+  "Who gets excited about an idea and drops it two days later?","Who's the best prankster?","Who could win a TV quiz show?",
+  "Who knows everyone's news?","Who photographs food before eating it?","Who will get married first… or did?",
+  "Who could convince you of anything?","Who loves traveling the most?","Who wakes up latest on Fridays?","Who drives too fast?",
+  "Who has the biggest sweet tooth?","Who cries during movies?","Who can fix anything that's broken?","Who loves a challenge the most?",
+  "Who could become an actor?","Who complains about the heat the most?","Who talks in their sleep?","Who loves camping trips the most?",
+  "Who would win a running race?","Who forgets people's names?","Who drinks the most coffee?","Who could live a month without sugar?",
+  "Who's the most patient?","Who likes everything organized?","Who could talk for an hour non-stop?","Who's the most generous?",
+  "Who gets upset when they lose a game?","Who has the weirdest hobby?","Who's scared of flying?","Who gives the best gifts?",
+  "Who could cook a whole feast alone?","Who's the best at bargaining?"],
+  "Family": ["Who loves ice cream the most?","Who keeps their room tidy?","Who's the best at drawing?","Who wakes up first at home?",
+  "Who laughs the loudest?","Who tells the best stories?","Who loves chocolate the most?","Who gets dressed the fastest?",
+  "Who helps in the kitchen?","Who loves games the most?","Who tells the funniest jokes?","Who loves school the most?",
+  "Who loves pets?","Who asks the most questions?","Who can stay quiet for a whole minute?"],
+  "Guys": ["Who says \"on my way\" before leaving the house?","Who takes 30 minutes to pick a restaurant then orders the usual?","Who joins the gym for a week then quits?",
+  "Who loves dune bashing?","Who plays PlayStation the most?","Who gets angry watching football?","Who washes their car every day?",
+  "Who falls asleep at the camp first?","Who's the BBQ master?","Who loses their stuff on camping trips?","Who knows every car model?","Who grabs the best seat first?"],
+  "Girls": ["Who tries every recipe she sees?","Who always has her phone on silent?","Who loves organizing get-togethers?","Who takes an hour to pick a photo?",
+  "Who loves specialty coffee the most?","Who loves organizing things?","Who knows all the family news?","Who loves trips?",
+  "Who laughs at anything?","Who loves trying new restaurants?","Who reads the most?","Who forgets to eat when busy?"],
+  "Ramadan": ["Who goes straight to sleep after suhoor?","Who grabs the first date at iftar?","Who gets grumpy before maghrib?","Who eats the most samosas?",
+  "Who stays up until dawn?","Who sets the iftar table?","Who only cooks in Ramadan?","Who buys everything at the market right before iftar?",
+  "Who naps in the afternoon and wakes up at the adhan?","Who loves qatayef the most?"],
+  "National Day": ["Who dresses fully in green on National Day?","Who decorates their car?","Who knows Saudi history the best?",
+  "Who goes out to watch the fireworks?","Who hangs the flag at home?","Who knows every region of the Kingdom?","Who does the Ardah dance best?",
+  "Who knows the most national songs?"]
+};
+
+const DARES = {
+  "General": ["Imitate someone here until they guess who","Speak in formal Arabic until your next turn","Name 5 foods starting with M in 10 seconds",
+  "Tell a joke — no laugh, no point","Act out someone waiting for dinner that isn't ready","Count from 20 down to 1 as fast as you can",
+  "Say everyone's name with one nice thing about them","Make a TV ad for the cup of tea in front of you","Talk about tomatoes for 30 seconds non-stop",
+  "Name 3 countries starting with S in 10 seconds","Commentate like a sports announcer on someone pouring coffee","Imitate how someone here walks",
+  "Name 5 Saudi cities in 8 seconds","Let the group pick a word — explain it without saying it","Say the alphabet backwards from Z to P",
+  "Be a weather anchor announcing a sandstorm tomorrow","Keep an angry face for 20 seconds without laughing","Say a full sentence without the letter E",
+  "Name 4 animals starting with C","Act out forgetting your wallet at a restaurant","Say \"red lorry, yellow lorry\" five times fast",
+  "Invent a new party game in 20 seconds","Describe your favorite food like it's the greatest invention","Act out bargaining over the price of a sheep",
+  "Name 5 car brands in 7 seconds","Talk like a robot until your next turn","Swap seats with the person on your left and imitate them for a minute",
+  "Say 3 things you like about the person on your right","Draw something in the air — whoever guesses first takes your point","Name 6 things in a house without stopping",
+  "Stand on one leg for 15 seconds","Name 5 types of dates in 10 seconds","Give a lecture on the importance of sleep","Describe your day like a documentary narrator",
+  "Say a sentence with 4 words starting with the same letter","Make 3 animal sounds — others guess","Name 5 green things in 8 seconds",
+  "Act out trying to wake up early for work","Describe this room like you're selling it","Name 4 Saudi football players in 10 seconds",
+  "Pick someone and share your best memory together","Talk for 20 seconds without saying \"like\"","Act out ordering at a restaurant where nobody understands you",
+  "Name 5 foods you hate and why in 20 seconds","Say 6 words ending in -ing","Act like a grandpa giving advice to the youth",
+  "Spell everyone's name backwards","Name 4 sports starting with B","Give a motivational speech about tea",
+  "Be a game show host asking the person next to you a question","Write your name in the air with your foot","Act out struggling to open a pickle jar",
+  "Say 3 things you'd do with an extra day off","Name 5 grocery store items in 6 seconds","Read a news bulletin about the last thing that happened here",
+  "Tell a short story where every word starts with a different letter","Do an evil laugh for 10 seconds"],
+  "Family": ["Make an animal sound — everyone guesses","Walk like a penguin to the door and back","Name 3 colors you can see around you","Make a train sound for 10 seconds",
+  "Name 5 fruits quickly","Freeze like a statue for 10 seconds","Say something nice to the person next to you","Jump 5 times while counting",
+  "Make an ambulance siren sound","Count to 10 in Arabic","Clap 3 times and say your name backwards","Draw a heart in the air","Act like you're eating a sour lemon",
+  "Say 3 things you love about your home"],
+  "Ramadan": ["Name 5 dishes on an iftar table","Act out waiting for the adhan","Imitate the Musaharati","Say 3 things you love about Ramadan",
+  "Act out waking up late for suhoor","Name 4 types of soup","Describe your family's iftar table in 15 seconds","Name 5 Ramadan desserts in 10 seconds"]
+};
+
+const TL_TOPICS = ["Something that happened to you while traveling","The weirdest food you've eaten","An embarrassing moment at school","Something you taught yourself","The strangest dream you've had",
+  "A place you'll never forget","Something you broke as a kid","Your first phone","A hidden talent","Something you're afraid of","The most money you spent on one thing",
+  "A celebrity you met or saw","A pet you had","A sport you tried","The longest you've ever slept","Something you did for the first time this year","A dish you can cook",
+  "The weirdest gift you got","A prank you pulled","Something you collect","A competition you won","The farthest place you've traveled","Something nobody here knows about you",
+  "A time you laughed until you cried","Something you lost and found much later"];
+
+const TABOO = [
+  ["Kabsa","Rice","Chicken","Lunch"],["Coffee","Cup","Morning","Caffeine"],["Camel","Desert","Hump","Ride"],["Airport","Plane","Travel","Flight"],
+  ["School","Teacher","Students","Class"],["Sea","Water","Fish","Beach"],["Phone","Call","Screen","iPhone"],["Sun","Hot","Day","Summer"],
+  ["Air conditioner","Cold","Cool","Heat"],["Hospital","Doctor","Sick","Nurse"],["Eid","Celebration","Gift","Ramadan"],["Rain","Cloud","Wet","Umbrella"],
+  ["Football","Match","Player","Goal"],["Car","Drive","Wheel","Road"],["Tent","Camping","Desert","Fire"],["Watch","Time","Wrist","Minute"],
+  ["Dates","Palm","Sweet","Coffee"],["Falcon","Bird","Hunt","Fly"],["Book","Read","Pages","Library"],["Key","Door","Lock","Open"],
+  ["Wedding","Marriage","Groom","Party"],["Sleep","Bed","Pillow","Tired"],["Barber","Hair","Scissors","Beard"],["Fridge","Cold","Food","Kitchen"],
+  ["Gasoline","Car","Station","Fuel"],["Thobe","White","Wear","Shemagh"],["Tea","Cup","Sugar","Mint"],["Bicycle","Wheels","Pedal","Ride"],
+  ["Restaurant","Food","Order","Waiter"],["Moon","Night","Stars","Full"],["Television","Screen","Channel","Remote"],["Market","Buy","Shops","Sell"],
+  ["Swimming pool","Swim","Water","Dive"],["Garden","Trees","Flowers","Play"],["Chef","Food","Kitchen","Cook"],["Police","Officer","Ticket","Law"],
+  ["Camera","Photo","Picture","Snap"],["Watermelon","Red","Green","Fruit"],["Umbrella","Rain","Shade","Sun"],["Bird","Feathers","Fly","Sing"],
+  ["Incense","Oud","Smoke","Smell"],["Hotel","Room","Stay","Booking"],["Perfume","Smell","Spray","Bottle"],["Elevator","Floor","Stairs","Button"],["Glasses","Eyes","See","Lenses"]
+];
+
+const ACT = ["Cooking kabsa","Driving in traffic","Pouring coffee","Fishing","Playing cards","Changing a tire","Taking a selfie","Riding a camel","Sleeping at work",
+  "Playing football","Shaving","Ironing a thobe","Fixing an AC","Swimming","Flying a kite","Grilling meat","Studying before an exam","Knocking on a door",
+  "Answering the phone","Working out at the gym","Chasing a bus","Drinking hot tea","Opening a gift","Doing the Ardah dance","Reading a newspaper","Hunting with a falcon",
+  "Washing a car","Packing a suitcase","Sneezing","Playing video games","Baking bread","Stuck in an elevator","Walking on hot sand","Teaching a class",
+  "Scared of a cockroach","Setting up a tent","Cleaning the house","Climbing stairs exhausted","Cheering for your team","Riding a bike","Looking for your keys","Blowing up a balloon",
+  "Milking a camel","Shopping at the mall","Dune bashing","Calling the adhan","Tying a shemagh","Serving guests"];
+
+const QUIZ = [
+  ["What is the capital of Saudi Arabia?","Riyadh",["Jeddah","Makkah","Dammam"]],
+  ["Saudi National Day is on?","September 23",["February 22","January 1","March 15"]],
+  ["Saudi Founding Day is on?","February 22",["September 23","May 10","November 30"]],
+  ["How many halalas in one riyal?","100",["20","50","10"]],
+  ["How many qirsh in one riyal?","20",["10","50","100"]],
+  ["Saudi Arabia's largest desert?","The Empty Quarter",["Nafud","Dahna","Jafurah"]],
+  ["Which city is called the Bride of the Red Sea?","Jeddah",["Yanbu","Jazan","Al Wajh"]],
+  ["Hegra (Mada'in Salih) is located in?","AlUla",["Tabuk","Hail","Najran"]],
+  ["Taif is famous for its?","Roses",["Rice","Oil","Pearls"]],
+  ["Abha is the capital of which region?","Asir",["Al-Baha","Jazan","Najran"]],
+  ["The Prophet's Mosque is in?","Madinah",["Makkah","Taif","Yanbu"]],
+  ["Saudi Arabia's emblem has a palm tree and?","Two crossed swords",["A falcon","A crescent","A star"]],
+  ["How many administrative regions does Saudi Arabia have?","13",["10","15","12"]],
+  ["The sea on Saudi Arabia's east coast?","Arabian Gulf",["Red Sea","Arabian Sea","Mediterranean"]],
+  ["The sea on Saudi Arabia's west coast?","Red Sea",["Arabian Gulf","Arabian Sea","Black Sea"]],
+  ["Khobar is in which region?","Eastern Province",["Riyadh","Qassim","Al-Jouf"]],
+  ["Which animal is called the ship of the desert?","Camel",["Horse","Lizard","Gazelle"]],
+  ["Which bird is famous in falconry?","Falcon",["Eagle","Pigeon","Owl"]],
+  ["NEOM is in which region?","Tabuk",["Riyadh","Jazan","Eastern Province"]],
+  ["King Fahd Causeway connects Saudi Arabia to?","Bahrain",["Qatar","Kuwait","UAE"]],
+  ["Saudi Arabia's international dialing code?","+966",["+971","+965","+973"]],
+  ["Hatim al-Ta'i, famous for generosity, is linked to?","Hail",["Asir","Qassim","Tabuk"]],
+  ["Diriyah was the capital of which Saudi state?","The First",["The Second","The Third","The Fourth"]],
+  ["What is a baby camel called in Arabic?","Huwar",["Muhr","Jaru","Shibl"]],
+  ["The main color of the Saudi flag?","Green",["Red","Blue","Black"]],
+  ["The first mosque built in Islam?","Quba Mosque",["Masjid al-Haram","Prophet's Mosque","Al-Aqsa"]],
+  ["What is the Saudi Ardah?","A folk dance with swords and drums",["A traditional dish","A type of tent","A card game"]],
+  ["Saudi Arabia's official currency?","Riyal",["Dinar","Dirham","Pound"]],
+  ["Saudi Arabia's most populous city?","Riyadh",["Jeddah","Makkah","Dammam"]],
+  ["Al-Ahsa is famous for its?","Palm oases",["Snow","Forests","Rivers"]],
+  ["The Kaaba is in?","Makkah",["Madinah","Jeddah","Taif"]],
+  ["Buraydah is famous for its festival of?","Dates",["Roses","Honey","Books"]],
+  ["What is \"Mufattah\"?","A whole lamb on rice",["A date dessert","Stuffed bread","A soup"]],
+  ["A dallah is used for?","Pouring coffee",["Cooking rice","Storing water","Incense"]],
+  ["A mabkhara is used for?","Oud and incense",["Coffee","Tea","Cooking"]]
+];
+
+// ================= أدوات =================
+const $ = id => document.getElementById(id);
+const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+               set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const shuffle = a => {a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const ar = n => String(n);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function cnt(n,one,two,few,many){return n===1?one:`${n} ${many}`}
+const ptsTxt=n=>n===1?'1 point':`${n} points`;
+function anim(el,c){if(!el)return;el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+
+// ================= الوضع النهاري =================
+let theme=store.get('jalsa_theme','dark');
+function applyTheme(){document.documentElement.dataset.theme=theme;$('thm').textContent=theme==='light'?'🌙':'☀️';
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=theme==='light'?'#f7f0e4':'#1a1410'}
+$('thm').onclick=()=>{theme=theme==='light'?'dark':'light';store.set('jalsa_theme',theme);applyTheme()};
+applyTheme();
+
+// ================= اللغة =================
+const LANG='en', HAS_EN=true;
+(function(){if(!HAS_EN){$('lng').style.display='none';return}
+  $('lng').onclick=()=>{store.set('jalsa_lang',LANG==='ar'?'en':'ar');location.href=LANG==='ar'?'en/':'../'};
+  if(LANG==='ar'&&store.get('jalsa_lang','ar')==='en'&&location.protocol==='https:')location.replace('en/');})();
+
+// ================= الافتتاحية =================
+function closeSplash(){const sp=$('splash');if(!sp||sp.classList.contains('bye'))return;sp.classList.add('bye');
+  setTimeout(()=>{try{unlockAudio();SFX.win()}catch(e){}},30);setTimeout(()=>sp.remove(),550)}
+$('splash').addEventListener('click',closeSplash);
+
+// ================= الصوت =================
+let soundOn = store.get('jalsa_sound', true), actx=null, unlocked=false;
+// الآيفون يكتم أصوات الصفحات إذا الجوال على الصامت، فنحوّل الجلسة الصوتية لوضع "تشغيل"
+try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+function silentWav(){ // ملف صوتي صامت قصير، يفتح قناة الصوت في iOS
+  const n=800,b=new ArrayBuffer(44+n),v=new DataView(b),w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);
+  for(let i=0;i<n;i++)v.setUint8(44+i,128);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+}
+let silentEl=null;
+function ac(){
+  if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(actx&&actx.state!=='running')actx.resume().catch(()=>{});
+  return actx}
+function unlockAudio(){
+  if(!soundOn)return;
+  const a=ac();
+  try{if(!silentEl){silentEl=new Audio(silentWav());silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.volume=0.01}
+    if(silentEl.paused)silentEl.play().catch(()=>{})}catch(e){}
+  if(a&&!unlocked){try{const s=a.createBufferSource();s.buffer=a.createBuffer(1,1,22050);s.connect(a.destination);s.start(0);unlocked=true}catch(e){}}
+}
+['touchend','pointerdown','click','keydown'].forEach(ev=>document.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running')actx.resume().catch(()=>{})});
+function tone(f,d=.12,type='sine',v=.18,when=0,slide=0){
+  if(!soundOn)return;const a=ac();if(!a)return;try{
+  const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+when;
+  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+d);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const SFX={
+  tap:()=>tone(520,.07,'triangle',.12),
+  reveal:()=>{tone(440,.12,'sine',.18);tone(660,.18,'sine',.18,.1)},
+  spy:()=>{tone(300,.25,'sawtooth',.12,0,150);tone(220,.35,'sawtooth',.1,.2,110)},
+  tick:()=>tone(900,.05,'square',.08),
+  end:()=>tone(400,.4,'square',.12,0,200),
+  win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.18,i*.11)),
+  lose:()=>[392,330,262].forEach((f,i)=>tone(f,.28,'sine',.16,i*.16)),
+  point:()=>{tone(880,.1,'triangle',.15);tone(1320,.15,'triangle',.15,.08)},
+  bad:()=>tone(180,.25,'sawtooth',.12),
+  whoosh:()=>tone(200,.18,'sine',.1,0,700)
+};
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function renderSnd(){$('snd').textContent=soundOn?'🔊':'🔇'}
+$('snd').onclick=()=>{soundOn=!soundOn;store.set('jalsa_sound',soundOn);renderSnd();if(!soundOn){try{silentEl&&silentEl.pause()}catch(e){}}else{unlockAudio();SFX.tap()}};
+renderSnd();
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.dataset.silent)SFX.tap()},true);
+
+// ================= الاحتفال =================
+const fx=$('fx'),fctx=fx.getContext('2d');let parts=[],fxOn=false;
+function sizeFx(){fx.width=innerWidth*devicePixelRatio;fx.height=innerHeight*devicePixelRatio}
+addEventListener('resize',sizeFx);sizeFx();
+function confetti(){
+  const cols=['#e8b04b','#f3c86e','#6cbf84','#e2674f','#6aa8d8','#f6ece0'],W=fx.width,dp=devicePixelRatio;
+  for(let i=0;i<140;i++)parts.push({x:W/2+(Math.random()-.5)*W*.3,y:fx.height*.35,vx:(Math.random()-.5)*16*dp,
+    vy:(-Math.random()*14-6)*dp,s:(Math.random()*6+5)*dp,c:cols[i%6],r:Math.random()*6,vr:(Math.random()-.5)*.3,life:0});
+  if(!fxOn){fxOn=true;requestAnimationFrame(drawFx)}
+}
+function drawFx(){
+  fctx.clearRect(0,0,fx.width,fx.height);
+  parts.forEach(p=>{p.vy+=.45*devicePixelRatio;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life++;
+    fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.r);fctx.fillStyle=p.c;fctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);fctx.restore()});
+  parts=parts.filter(p=>p.y<fx.height+40&&p.life<300);
+  if(parts.length)requestAnimationFrame(drawFx);else{fxOn=false;fctx.clearRect(0,0,fx.width,fx.height)}
+}
+function plusOne(btn,txt='+1'){const r=btn.getBoundingClientRect(),d=document.createElement('div');d.className='plus';d.textContent=txt;
+  d.style.left=(r.left+r.width/2-16)+'px';d.style.top=(r.top-10)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000)}
+
+// ================= تنقل ونوافذ =================
+let current='s-home';
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');current=id;window.scrollTo(0,0);
+  TIMERS.forEach(t=>{if(t.screen!==id)t.stop()});
+  $('quit').classList.toggle('on',IN_GAME.includes(id))}
+const IN_GAME=['s-pass','s-word','s-talk','s-vote','s-turn','s-play','s-turnEnd','s-quiz','s-race','s-drawPass','s-drawWord','s-draw','s-drawWho','s-letters','s-lettersScore','s-lettersTotal'];
+let pausedTimer=null;
+$('quit').onclick=()=>{
+  pausedTimer=TIMERS.find(t=>t.running)||null; if(pausedTimer)pausedTimer.stop();
+  modal('Leave the game? This round won\'t count.',()=>{pausedTimer=null;go('s-modes')},()=>{if(pausedTimer){pausedTimer.run();pausedTimer=null}});
+};
+document.querySelectorAll('#tabs .tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.tabp').forEach(g=>g.classList.toggle('on',g.id===t.dataset.t))});
+const PAL=['#e8b04b','#e2674f','#6cbf84','#6aa8d8','#c98bd8','#5fb3b3','#f08a5d','#d6c25a'];
+document.querySelectorAll('#s-modes .grid').forEach(g=>g.querySelectorAll('.mode').forEach((b,i)=>b.style.setProperty('--c',PAL[(i+(g.id==='g-team'?3:g.id==='g-tools'?5:0))%PAL.length])));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+let modalCb=null,modalNoCb=null;
+function modal(t,cb,noCb){$('modalTxt').textContent=t;modalCb=cb||null;modalNoCb=noCb||null;$('modalNo').style.display=cb?'block':'none';$('modalOk').textContent=cb?'Yes':'OK';$('modal').classList.add('on')}
+$('modalOk').onclick=()=>{$('modal').classList.remove('on');if(modalCb)modalCb()};
+$('modalNo').onclick=()=>{$('modal').classList.remove('on');if(modalNoCb)modalNoCb()};
+
+// ================= مؤقت =================
+const TIMERS=[];
+class Timer{
+  constructor(el,onEnd,screen,short){this.el=el;this.onEnd=onEnd;this.screen=screen;this.short=short;this.left=0;this.int=null;TIMERS.push(this)}
+  fmt(s){return this.short?ar(s):ar(Math.floor(s/60)+':'+String(s%60).padStart(2,'0'))}
+  draw(){$(this.el).textContent=this.fmt(this.left);$(this.el).classList.toggle('low',this.left<=(this.short?3:10))}
+  start(secs){this.left=secs;this.draw();this.run()}
+  run(){this.stop();this.int=setInterval(()=>{this.left--;this.draw();
+    if(this.left<=(this.short?3:10)&&this.left>0){SFX.tick();anim($(this.el),'pop')}
+    if(this.left<=0){this.stop();SFX.end();buzz(400);this.onEnd&&this.onEnd()}},1000)}
+  stop(){clearInterval(this.int);this.int=null}
+  get running(){return !!this.int}
+}
+
+// ================= عدّاد الجولات (رقم واحد مشترك، بدون أي بيانات عن اللاعبين) =================
+const CNT='https://abacus.jasoncameron.dev', CNT_KEY='cumds-jalsa/rounds', CNT_MIN=20;
+function showCount(v){v=parseInt(v,10);if(!(v>=CNT_MIN))return;
+  let t;try{t=v.toLocaleString('en-US')}catch(e){t=ar(v)}
+  $('live').innerHTML=`🔥 <b>${t}</b> rounds played so far`;$('live').style.display='block'}
+function cntFetch(path){try{const c=new AbortController();setTimeout(()=>c.abort(),5000);
+  return fetch(`${CNT}/${path}/${CNT_KEY}`,{signal:c.signal,cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(r.status))}catch(e){return Promise.reject(e)}}
+function loadCount(){cntFetch('get').then(d=>showCount(d.value)).catch(()=>{})}
+function countRound(){cntFetch('hit').then(d=>showCount(d.value)).catch(e=>{if(e===404)cntFetch('create').catch(()=>{})})}
+loadCount();
+
+// ================= اللاعبين وسجل الليلة =================
+let players = store.get('jalsa_players', []);
+let tally = store.get('jalsa_tally', {});
+function award(names){names.forEach(n=>tally[n]=(tally[n]||0)+1);store.set('jalsa_tally',tally)}
+function renderPlayers(){
+  $('chips').innerHTML = players.map((p,i)=>`<div class="chip">${esc(p)}<button data-i="${i}" aria-label="Remove">✕</button></div>`).join('');
+  $('chips').querySelectorAll('button').forEach(b=>b.onclick=()=>{players.splice(+b.dataset.i,1);savePlayers()});
+  const ok = players.length>=3;
+  $('toModes').disabled=!ok;
+  $('pHint').textContent = ok ? `${players.length} players ready` : `You need at least 3 players (${3-players.length} more)`;
+}
+function savePlayers(){store.set('jalsa_players',players);renderPlayers()}
+$('addForm').onsubmit=e=>{e.preventDefault();const v=$('nameIn').value.trim();
+  if(!v)return; if(players.includes(v)){modal('That name is taken — try another');return}
+  if(players.length>=16){modal('Maximum is 16 players');return}
+  players.push(v);$('nameIn').value='';savePlayers();$('nameIn').focus()};
+$('toModes').onclick=()=>go('s-modes');
+document.querySelectorAll('[data-go="s-home"]').forEach(b=>b.addEventListener('click',loadCount));
+renderPlayers();
+
+function renderTally(){
+  const list=players.map(p=>[p,tally[p]||0]).concat(Object.keys(tally).filter(k=>!players.includes(k)).map(k=>[k,tally[k]]))
+    .sort((a,b)=>b[1]-a[1]);
+  const medals=['🥇','🥈','🥉'];
+  $('tallyList').innerHTML=list.length?list.map(([p,s],i)=>`<div class="score"><span>${s>0&&i<3?`<span class="medal">${medals[i]}</span>`:''}${esc(p)}</span><b>${ar(s)}</b></div>`).join('')
+    :'<p class="hint">No results yet</p>';
+}
+$('toTally').onclick=()=>{renderTally();go('s-tally')};
+$('tallyReset').onclick=()=>modal('Reset tonight\'s board?',()=>{tally={};store.set('jalsa_tally',tally);renderTally()});
+
+// ================= كلماتكم =================
+let custom = store.get('jalsa_custom',{words:[],who:[],dares:[]});
+const CTABS=[['words','Spy words','e.g. Abu Fahad\'s camp','Add at least 4 words to unlock a "Your words" category in The Spy'],
+             ['who','Most Likely','e.g. Who\'s always late to the camp?','Unlocks a "Your words" pack in Who\'s Most Likely'],
+             ['dares','Dares','e.g. Imitate Abu Saad pouring coffee','Unlocks a "Your words" pack in Dares']];
+let cTab='words';
+function renderCustom(){
+  $('cTabs').innerHTML=CTABS.map(([k,l])=>`<button class="cat ${k===cTab?'sel':''}" data-k="${k}">${l} (${ar(custom[k].length)})</button>`).join('');
+  $('cTabs').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{cTab=b.dataset.k;renderCustom()});
+  const t=CTABS.find(x=>x[0]===cTab);$('cIn').placeholder=t[2];$('cHint').textContent=t[3];
+  $('cList').innerHTML=custom[cTab].map((w,i)=>`<div class="item"><span>${esc(w)}</span><button data-i="${i}">✕</button></div>`).join('');
+  $('cList').querySelectorAll('button').forEach(b=>b.onclick=()=>{custom[cTab].splice(+b.dataset.i,1);store.set('jalsa_custom',custom);renderCustom()});
+}
+$('cForm').onsubmit=e=>{e.preventDefault();const v=$('cIn').value.trim();if(!v)return;
+  if(custom[cTab].includes(v)){modal('Already added');return}
+  custom[cTab].unshift(v);store.set('jalsa_custom',custom);$('cIn').value='';renderCustom();$('cIn').focus()};
+renderCustom();
+document.querySelector('[data-go="s-custom"]').addEventListener('click',renderCustom);
+
+// ================= الدخيل =================
+let cat='Random', spyCount=1, round=null, talkSecs=store.get('jalsa_time',180);
+function catsAll(){const c={...CATS};if(custom.words.length>=4)c['Your words']=custom.words;return c}
+function renderSpySetup(){
+  const C=catsAll(), names=['Random',...Object.keys(C)]; if(!names.includes(cat))cat='Random';
+  $('cats').innerHTML=names.map(c=>`<button class="cat ${c===cat?'sel':''}">${c}</button>`).join('');
+  $('cats').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{cat=b.textContent;renderSpySetup()});
+  const can2=players.length>=5; if(!can2)spyCount=1;
+  $('spyN').innerHTML=[1,2].map(n=>`<button class="cat ${n===spyCount?'sel':''}" data-n="${n}" ${n===2&&!can2?'disabled':''}>${n===1?'1 spy':'2 spies'}</button>`).join('');
+  $('spyN').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{spyCount=+b.dataset.n;renderSpySetup()});
+  $('spyNHint').textContent=can2?'With 2 spies, neither knows who the other is 😈':'2 spies need 5 or more players';
+  const T=[[120,'2 min'],[180,'3 min'],[300,'5 min']];
+  $('times').innerHTML=T.map(([s,l])=>`<button class="cat ${s===talkSecs?'sel':''}" data-s="${s}">${l}</button>`).join('');
+  $('times').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{talkSecs=+b.dataset.s;store.set('jalsa_time',talkSecs);renderSpySetup()});
+}
+document.querySelector('[data-go="s-spySetup"]').addEventListener('click',renderSpySetup);
+
+function startSpy(){
+  const C=catsAll(), c = cat==='Random' ? pick(Object.keys(C)) : cat;
+  const idx=shuffle(players.map((_,i)=>i));
+  round={cat:c, list:C[c], word:pick(C[c]), spies:idx.slice(0,spyCount), order:shuffle(players.map((_,i)=>i)), idx:0, votes:[]};
+  showPass();
+}
+function showPass(){
+  const p=round.order[round.idx];
+  $('passName').textContent=players[p];
+  $('passCount').textContent=`${round.idx+1} of ${players.length}`;
+  go('s-pass');anim($('passBox'),'pop');
+}
+$('spyStart').onclick=()=>{countRound();startSpy()};
+$('spyAgain').onclick=()=>{countRound();startSpy()};
+$('reveal').onclick=()=>{
+  const p=round.order[round.idx], isSpy=round.spies.includes(p);
+  $('wordBox').innerHTML = isSpy
+    ? `<div class="lbl">${esc(players[p])}</div><div class="spy">You are the Spy 🕵️</div><div class="lbl">Category: ${esc(round.cat)}<br>Blend in and try to figure out the word</div>`
+    : `<div class="lbl">${esc(players[p])}, your word is</div><div class="word">${esc(round.word)}</div><div class="lbl">Category: ${esc(round.cat)}</div>`;
+  $('wordFront').innerHTML=`<div class="sadu a"></div><div class="lbl">${esc(players[p])}</div><div class="hold">👆</div><div class="q" style="font-size:24px">Press and hold the card<br>to see your word</div><div class="lbl" style="font-size:15px">Lift your finger to hide it</div><div class="sadu b"></div>`;
+  round.seen=false;round.isSpy=isSpy;$('hideWord').disabled=true;$('flipCard').classList.remove('open');
+  go('s-word');
+};
+(function(){const fc=$('flipCard');
+  const open=e=>{e.preventDefault();if(fc.classList.contains('open'))return;fc.classList.add('open');
+    if(!round.seen){round.seen=true;$('hideWord').disabled=false;if(round.isSpy){SFX.spy();buzz([80,60,80])}else SFX.reveal()}else SFX.tap()};
+  const close=()=>fc.classList.remove('open');
+  fc.addEventListener('pointerdown',open);['pointerup','pointercancel','pointerleave'].forEach(ev=>fc.addEventListener(ev,close));
+  fc.addEventListener('contextmenu',e=>e.preventDefault());})();
+$('hideWord').onclick=()=>{round.idx++; if(round.idx<players.length) showPass(); else startTalk()};
+
+const spyTimer=new Timer('timer',()=>{$('tToggle').textContent='Done';goVote()},'s-talk');
+function startTalk(){SFX.whoosh();$('starter').textContent=pick(players);$('catLbl').textContent='Category: '+round.cat;
+  $('tToggle').textContent='Pause';go('s-talk');spyTimer.start(talkSecs)}
+$('tToggle').onclick=()=>{if(spyTimer.left<=0)return;if(spyTimer.running){spyTimer.stop();$('tToggle').textContent='Resume'}else{spyTimer.run();$('tToggle').textContent='Pause'}};
+function goVote(){
+  round.votes=[];
+  $('voteTitle').textContent=spyCount===1?'Who is the spy?':'Who are the spies?';
+  $('voteHint').textContent=spyCount===1?'Discuss and pick one by majority':'Pick two by majority';
+  $('voteList').innerHTML=players.map((p,i)=>`<button class="opt" data-i="${i}" style="text-align:left">${esc(p)}</button>`).join('');
+  $('voteList').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    if(spyCount===1){showResult([i]);return}
+    if(round.votes.includes(i))round.votes=round.votes.filter(x=>x!==i);else if(round.votes.length<2)round.votes.push(i);
+    $('voteList').querySelectorAll('button').forEach(x=>x.classList.toggle('picked',round.votes.includes(+x.dataset.i)));
+    $('voteGo').style.display=round.votes.length===2?'block':'none';
+  });
+  $('voteGo').style.display='none';
+  go('s-vote');
+}
+$('toVote').onclick=()=>{spyTimer.stop();goVote()};
+$('voteGo').onclick=()=>showResult(round.votes);
+
+function spyNames(){return round.spies.map(i=>players[i])}
+function nonSpies(){return players.filter((_,i)=>!round.spies.includes(i))}
+function showResult(voted){
+  const names=spyNames().map(esc).join(' & ');
+  const caught=round.spies.every(s=>voted.includes(s));
+  const one=spyCount===1;
+  $('guessArea').innerHTML='';
+  if(caught){
+    SFX.win();confetti();
+    $('resultBox').innerHTML=`<div class="lbl">Caught! ${one?'The spy was':'The spies were'}</div><div class="name">${names}</div><div class="lbl">But there's one last chance… guess the word and ${one?'the spy wins':'the spies win'}</div>`;
+    const opts=shuffle([round.word,...shuffle(round.list.filter(w=>w!==round.word)).slice(0,7)]);
+    $('guessArea').innerHTML=`<div class="card" style="margin-top:12px"><h3>${names}, what's the word?</h3><div class="opts">${opts.map(o=>`<button class="opt">${esc(o)}</button>`).join('')}</div></div>`;
+    $('guessArea').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const all=$('guessArea').querySelectorAll('.opt');
+      all.forEach(x=>{x.disabled=true;if(x.textContent===round.word)x.classList.add('right')});
+      const win=b.textContent===round.word; if(!win)b.classList.add('wrong');
+      if(win){SFX.spy();anim($('guessArea').querySelector('.card'),'shake');award(spyNames())}else{SFX.win();confetti();award(nonSpies())}
+      $('guessArea').querySelector('.card').insertAdjacentHTML('beforeend',
+        `<div style="text-align:center;font-size:22px;font-weight:800;margin-top:14px;color:${win?'var(--gold)':'var(--green)'}">${win?(one?'Guessed it! The spy wins 🏆':'Guessed it! The spies win 🏆'):'Wrong guess — you win 🎉'}</div>`);
+    });
+  }else{
+    SFX.lose();award(spyNames());
+    $('resultBox').innerHTML=`<div class="lbl">Wrong! ${one?'The spy was':'The spies were'}</div><div class="spy" style="font-size:36px">${names}</div><div class="lbl">and the word was</div><div class="word" style="font-size:34px">${esc(round.word)}</div><div class="lbl" style="color:var(--gold)">${one?'The spy wins':'The spies win'} 🏆</div>`;
+    setTimeout(()=>anim($('resultBox'),'shake'),50);
+  }
+  go('s-result');anim($('resultBox'),'pop');
+}
+
+// ================= الحزم (مين فينا / تحدي) =================
+let packGame='who', selPacks={who:store.get('jalsa_pk_who',['General']),dare:store.get('jalsa_pk_dare',['General'])};
+function packsOf(g){const base=g==='who'?{...WHO}:{...DARES};const c=g==='who'?custom.who:custom.dares;if(c.length)base['Your words']=c;return base}
+function renderPacks(){
+  const P=packsOf(packGame);selPacks[packGame]=selPacks[packGame].filter(k=>P[k]);if(!selPacks[packGame].length)selPacks[packGame]=['General'];
+  $('packsTitle').textContent=packGame==='who'?"Who's Most Likely?":'Dares';
+  $('packs').innerHTML=Object.keys(P).map(k=>`<button class="cat ${selPacks[packGame].includes(k)?'sel':''}" data-k="${k}">${k} (${ar(P[k].length)})</button>`).join('');
+  $('packs').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{const k=b.dataset.k,s=selPacks[packGame];
+    if(s.includes(k)){if(s.length>1)s.splice(s.indexOf(k),1)}else s.push(k);store.set('jalsa_pk_'+packGame,s);renderPacks()});
+  $('packsHint').textContent='You can pick more than one pack. "Family" is great with kids around.';
+}
+document.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>{packGame=b.dataset.pack;renderPacks();go('s-packs')});
+function deckFrom(g){const P=packsOf(g);return shuffle([...new Set(selPacks[g].flatMap(k=>P[k]))])}
+$('packsGo').onclick=()=>{countRound();if(packGame==='who'){whoDeck=deckFrom('who');nextWho();go('s-who')}else{dareDeck=deckFrom('dare');scores={};turn=Math.floor(Math.random()*players.length)-1;nextDare();go('s-dare')}};
+
+// مين فينا
+let whoDeck=[];
+function nextWho(){if(!whoDeck.length)whoDeck=deckFrom('who');$('whoQ').textContent=whoDeck.pop();anim($('whoQ'),'flip')}
+$('whoNext').onclick=nextWho;
+
+// تحدي
+let dareDeck=[], turn=-1, scores={};
+function scoreList(el,obj){
+  const list=players.map(p=>[p,obj[p]||0]).sort((a,b)=>b[1]-a[1]);
+  $(el).innerHTML=list.map(([p,s])=>`<div class="score"><span>${esc(p)}</span><b>${ar(s)}</b></div>`).join('');
+}
+function nextDare(){
+  if(!dareDeck.length)dareDeck=deckFrom('dare');
+  turn=(turn+1)%players.length;
+  $('dareName').textContent=players[turn];$('dareQ').textContent=dareDeck.pop();scoreList('scores',scores);anim($('dareName'),'pop');anim($('dareQ'),'flip');
+}
+$('dareDone').onclick=e=>{const p=players[turn];scores[p]=(scores[p]||0)+1;award([p]);SFX.point();plusOne(e.currentTarget);nextDare()};
+$('dareSkip').onclick=nextDare;
+
+// ================= صح ولا كذب =================
+let tlDeck=[], tlTurn=-1, tlScores={};
+function tlTopic(){if(!tlDeck.length)tlDeck=shuffle(TL_TOPICS);$('tlQ').textContent=tlDeck.pop();anim($('tlQ'),'flip')}
+function tlNext(){tlTurn=(tlTurn+1)%players.length;$('tlName').textContent=players[tlTurn];anim($('tlName'),'pop');tlTopic();scoreList('tlScores',tlScores)}
+$('startTL').onclick=()=>{countRound();tlScores={};tlTurn=Math.floor(Math.random()*players.length)-1;tlNext();go('s-tl')};
+$('tlFool').onclick=e=>{const p=players[tlTurn];tlScores[p]=(tlScores[p]||0)+1;award([p]);SFX.point();plusOne(e.currentTarget);tlNext()};
+$('tlCaught').onclick=()=>{SFX.bad();tlNext()};
+$('tlSkip').onclick=tlTopic;
+
+// ================= ألعاب الفرق =================
+const TEAM_NAMES=['Falcons','Wolves'];
+let teamGame='taboo', teams=[[],[]], match=null, roundsPer=store.get('jalsa_rounds',3);
+const TG={
+  taboo:{title:'Taboo',verb:'explains',secs:60,hint:'Explain the word to your team without saying it or any forbidden word. The other team is watching!'},
+  act:{title:'Charades',verb:'acts',secs:60,hint:'Act it out without sounds or words — your team guesses. Pointing is fine, talking is not!'},
+  quiz:{title:'Team Quiz',verb:'answers',secs:0,hint:'Teams take turns answering. Discuss, answer — each correct answer is a point.'}
+};
+function splitTeams(){const s=shuffle(players);teams=[s.filter((_,i)=>i%2===0),s.filter((_,i)=>i%2===1)]}
+function renderTeams(){
+  $('teamsTitle').textContent=TG[teamGame].title;
+  $('teamsBox').innerHTML=teams.map((t,i)=>`<div class="team t${i}"><h3>${TEAM_NAMES[i]}</h3>${t.map(p=>`<div class="m">${esc(p)}</div>`).join('')}</div>`).join('');
+  $('roundsCard').style.display=teamGame==='quiz'?'none':'block';
+  $('roundsSel').innerHTML=[2,3,5].map(n=>`<button class="cat ${n===roundsPer?'sel':''}" data-n="${n}">${ar(n)}</button>`).join('');
+  $('roundsSel').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{roundsPer=+b.dataset.n;store.set('jalsa_rounds',roundsPer);renderTeams()});
+  $('teamsHint').textContent=TG[teamGame].hint;
+}
+document.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{
+  if(players.length<4){modal('Team games need at least 4 players');return}
+  teamGame=b.dataset.team;splitTeams();renderTeams();go('s-teams')});
+$('shuffleTeams').onclick=()=>{splitTeams();renderTeams();anim($('teamsBox'),'pop')};
+
+function tscore(el){
+  $(el).innerHTML=[0,1].map(i=>`<div class="c${i} ${match&&match.team===i?'on':''}"><span>${TEAM_NAMES[i]}</span><b>${ar(match.pts[i])}</b></div>`).join('');
+}
+function startMatch(){
+  match={pts:[0,0],team:Math.random()<.5?0:1,turns:0,ptr:[0,0],deck:[],qn:0};
+  if(teamGame==='taboo')match.deck=shuffle(TABOO);
+  if(teamGame==='act')match.deck=shuffle(ACT);
+  if(teamGame==='quiz'){match.deck=shuffle(QUIZ).slice(0,Math.min(12,QUIZ.length));nextQuiz();return}
+  showTurn();
+}
+$('teamsGo').onclick=()=>{countRound();startMatch()};
+$('matchAgain').onclick=()=>{splitTeams();renderTeams();go('s-teams')};
+
+function showTurn(){
+  const t=match.team, who=teams[t][match.ptr[t]%teams[t].length];
+  match.player=who;
+  $('turnTeam').textContent=`Team ${TEAM_NAMES[t]} · Round ${Math.floor(match.turns/2)+1} of ${roundsPer}`;
+  $('turnName').textContent=who;
+  $('turnName').style.color=t?'var(--blue)':'var(--gold)';
+  $('turnHint').textContent=`${TG[teamGame].verb} — ${TG[teamGame].secs} seconds. Hand over the phone 📱`;
+  tscore('tsTurn');go('s-turn');anim($('turnName'),'pop');
+}
+const playTimer=new Timer('pTimer',()=>endTurn(),'s-play');
+$('turnGo').onclick=()=>{match.turnPts=0;match.got=0;$('pFoul').style.display=teamGame==='taboo'?'block':'none';nextCard();go('s-play');SFX.whoosh();playTimer.start(TG[teamGame].secs)};
+function nextCard(){
+  if(!match.deck.length)match.deck=shuffle(teamGame==='taboo'?TABOO:ACT);
+  const c=match.deck.pop();
+  $('pCard').innerHTML = teamGame==='taboo'
+    ? `<div class="word">${esc(c[0])}</div><div class="taboo">${c.slice(1).map(w=>`<div>${esc(w)}</div>`).join('')}</div>`
+    : `<div class="lbl">Act out</div><div class="word">${esc(c)}</div>`;
+  $('pCount').textContent=`Turn points: ${match.turnPts}`;
+  anim($('pCard'),'flip');
+}
+$('pOk').onclick=e=>{match.turnPts++;match.got++;SFX.point();plusOne(e.currentTarget);nextCard()};
+$('pSkip').onclick=()=>nextCard();
+$('pFoul').onclick=e=>{match.turnPts--;SFX.bad();buzz(150);plusOne(e.currentTarget,'-1');anim($('pCard'),'shake');nextCard()};
+function endTurn(){
+  playTimer.stop();
+  const t=match.team; match.pts[t]+=match.turnPts; match.ptr[t]++; match.turns++;
+  $('turnEndBox').innerHTML=`<div class="lbl">Time's up ⏰</div><div class="name" style="color:${t?'var(--blue)':'var(--gold)'}">${esc(match.player)}</div><div class="lbl">scored for ${TEAM_NAMES[t]}</div><div class="word">${match.turnPts<0?ar(match.turnPts):ptsTxt(match.turnPts)}</div>`;
+  match.team=1-t; tscore('tsEnd');
+  $('nextTurn').textContent=match.turns>=roundsPer*2?'See the result 🏆':'Next turn';
+  go('s-turnEnd');anim($('turnEndBox'),'pop');
+}
+$('nextTurn').onclick=()=>{if(match.turns>=roundsPer*2)endMatch();else showTurn()};
+
+function nextQuiz(){
+  if(match.qn>=match.deck.length){endMatch();return}
+  const [q,a,wrong]=match.deck[match.qn], t=match.team;
+  $('qMeta').textContent=`Question ${match.qn+1} of ${match.deck.length} · ${TEAM_NAMES[t]}' turn`;
+  $('qMeta').style.color=t?'var(--blue)':'var(--gold)';
+  $('qText').textContent=q;
+  $('qOpts').innerHTML=shuffle([a,...wrong]).map(o=>`<button class="opt">${esc(o)}</button>`).join('');
+  $('qOpts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    $('qOpts').querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.textContent===a)x.classList.add('right')});
+    if(b.textContent===a){match.pts[t]++;SFX.point();plusOne(b)}else{b.classList.add('wrong');SFX.bad();buzz(150)}
+    tscore('tsQuiz');$('qNext').style.display='block';
+  });
+  $('qNext').style.display='none';tscore('tsQuiz');
+  if(current!=='s-quiz')go('s-quiz');anim($('qText'),'flip');
+}
+$('qNext').onclick=()=>{match.qn++;match.team=1-match.team;nextQuiz()};
+
+function endMatch(){
+  match.team=-1;
+  const [a,b]=match.pts;
+  if(a===b){$('matchBox').innerHTML=`<div class="lbl">Result</div><div class="word">It's a tie! 🤝</div><div class="lbl">Nobody won — rematch?</div>`;SFX.reveal()}
+  else{const w=a>b?0:1;award(teams[w]);SFX.win();confetti();
+    $('matchBox').innerHTML=`<div class="crown">👑</div><div class="lbl">Winner</div><div class="name">${TEAM_NAMES[w]}</div><div class="lbl">${teams[w].map(esc).join(', ')}</div>`}
+  tscore('tsMatch');go('s-match');anim($('matchBox'),'pop');
+}
+
+// ================= محتوى الدفعة الثانية =================
+const LETTERS=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','R','S','T','W'];
+const RACE_TOPICS=['Boys\' names','Girls\' names','Cities','Countries','Foods','Animals','Fruits & veggies','Jobs','Things at home','Kitchen things','Brands','Things in the desert'];
+const DRAW=['Camel','Tent','Coffee pot','Palm tree','Car','Airplane','Sun','Moon','House','Fish','Cat','Tree','Football','Glasses','Watch','Key','Cup of tea','Umbrella','Phone','Chair',
+  'Door','Falcon','Flower','Watermelon','Banana','Apple','Cake','Burger','Ice cream','Ship','Bicycle','Pen','Book','Lamp','Snowman','Mountain','Sea','Cloud','Rain','Star',
+  'Heart','Balloon','Gift','Lantern','Tower','Camera','TV','Air conditioner','Incense burner','Shemagh','Sunglasses','Ladder','Scissors','Butterfly','Snail','Spider','Boat','Rocket','Pizza','Fork'];
+const STORY_START=['One winter night in the desert, we heard a strange noise behind the tent…','I woke up and found my car had turned pink…','We took a road trip to Abha, and halfway there…',
+  'The doorbell rang, and a camel was standing there staring at me…','On my first day at work, the boss called me in and said…','We ordered dinner from a new restaurant, and when it arrived…',
+  'We were waiting for the kabsa when suddenly the power went out…','I found an old lamp at the market, and when I rubbed it…','I boarded the plane, and the guy next to me said he was from the future…',
+  'We opened a restaurant, and our very first customer was…'];
+const STORY_WORDS=['Falcon','Watermelon','Air conditioner','Shemagh','Lantern','Airplane','Grandma','Treasure','Dinosaur','Kabsa','TikTok','Rain','Moon','Police officer','Goalkeeper','Magician','Ambulance',
+  'Cat','Wolf','Desert','Sea','Island','King','Robot','Ghost','Traffic jam','Speeding ticket','Wedding','Exam','Coffee pot','Dates','Kunafa','Broken phone','Map','Key','Box',
+  'Letter','Clock','Glasses','Shoe','Fridge','Elevator','Bus','Sheep','Pigeon','Star','Thunder','Stage','Camera','News anchor','Chef','Barber','Cave','Sand','Balloon','Bicycle','Kitchen','Train'];
+const WHEEL_QS=['Who pours the coffee?','Who pays?','Who brings dinner?','Who goes first?','Who does the dishes?'];
+
+const GAME_URL='https://cumds.github.io/jalsa/';
+
+function winScreen(title,name,sub,again){
+  $('winBox').innerHTML=`<div class="crown">👑</div><div class="lbl">${title}</div><div class="name">${esc(name)}</div><div class="lbl">${sub||''}</div>`;
+  winAgain=again;SFX.win();confetti();go('s-win');anim($('winBox'),'pop');
+}
+let winAgain=null;$('winAgain').onclick=()=>winAgain&&winAgain();
+
+// ================= سباق الحروف =================
+let race=null;
+const raceTimer=new Timer('raceTimer',()=>raceKick(),'s-race',true);
+function raceTopic(){race.topic=pick(RACE_TOPICS);race.letter=pick(LETTERS);$('raceTopic').textContent=race.topic;$('raceLetter').textContent=race.letter;anim($('raceLetter'),'pop')}
+function raceShow(){
+  const p=race.alive[race.i];$('raceName').textContent=p;anim($('raceName'),'pop');
+  $('raceLeft').innerHTML=players.map(x=>`<span class="${race.alive.includes(x)?'':'out'}">${esc(x)}</span>`).join(' · ');
+  raceTimer.start(race.secs);
+}
+function raceStart(){countRound();race={alive:shuffle(players),i:0,secs:7};raceTopic();go('s-race');raceShow()}
+function raceNext(){race.i=(race.i+1)%race.alive.length;raceShow()}
+function raceKick(){
+  raceTimer.stop();const out=race.alive[race.i];SFX.bad();buzz(200);
+  race.alive.splice(race.i,1);
+  if(race.alive.length===1){award([race.alive[0]]);winScreen('Last one standing',race.alive[0],`${esc(out)} was the last one out 😅`,raceStart);return}
+  if(race.i>=race.alive.length)race.i=0;
+  raceTopic();raceShow();
+}
+$('startRace').onclick=raceStart;
+$('raceOk').onclick=e=>{SFX.point();plusOne(e.currentTarget,'✓');raceNext()};
+$('raceOut').onclick=raceKick;
+$('raceNew').onclick=()=>{raceTopic();raceTimer.start(race.secs)};
+
+// ================= ارسم وخمّن =================
+let draw=null, pctx=null, pen='#2a1c0c', drawing=false, lastPt=null;
+const PENS=['#2a1c0c','#e2674f','#3f8f5a','#3a7bc8','#e8b04b','#fbf6ef'];
+const drawTimer=new Timer('drawTimer',()=>drawEnd(false),'s-draw');
+function renderPens(){$('pens').innerHTML=PENS.map(c=>`<button class="pen ${c===pen?'sel':''}" data-c="${c}" style="background:${c}" aria-label="${c==='#fbf6ef'?'Eraser':'Color'}"></button>`).join('')+
+  `<button class="pen" id="padClear" style="background:var(--card2);color:var(--text);font-size:16px" aria-label="Clear">🗑</button>`;
+  $('pens').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{pen=b.dataset.c;renderPens()});
+  $('padClear').onclick=clearPad}
+function sizePad(){const c=$('pad'),r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;pctx=c.getContext('2d');pctx.scale(d,d);pctx.lineCap='round';pctx.lineJoin='round';clearPad()}
+function clearPad(){if(!pctx)return;const c=$('pad');pctx.fillStyle='#fbf6ef';pctx.fillRect(0,0,c.width,c.height)}
+function pt(e){const r=$('pad').getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+$('pad').addEventListener('pointerdown',e=>{drawing=true;lastPt=pt(e);$('pad').setPointerCapture(e.pointerId);
+  pctx.fillStyle=pen;pctx.beginPath();pctx.arc(lastPt.x,lastPt.y,(pen==='#fbf6ef'?14:3),0,7);pctx.fill()});
+$('pad').addEventListener('pointermove',e=>{if(!drawing)return;const p2=pt(e);pctx.strokeStyle=pen;pctx.lineWidth=pen==='#fbf6ef'?28:6;
+  pctx.beginPath();pctx.moveTo(lastPt.x,lastPt.y);pctx.lineTo(p2.x,p2.y);pctx.stroke();lastPt=p2});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>$('pad').addEventListener(ev,()=>drawing=false));
+function drawPass(){const p=draw.order[draw.i%draw.order.length];draw.drawer=p;$('drawName').textContent=p;scoreList('drawScores',draw.pts);go('s-drawPass');anim($('drawPassBox'),'pop')}
+$('startDraw').onclick=()=>{countRound();draw={order:shuffle(players),i:0,pts:{},deck:shuffle(DRAW)};drawPass()};
+$('drawSee').onclick=()=>{if(!draw.deck.length)draw.deck=shuffle(DRAW);draw.word=draw.deck.pop();$('drawWord').textContent=draw.word;SFX.reveal();go('s-drawWord');anim($('drawWord'),'flip')};
+$('drawGo').onclick=()=>{pen=PENS[0];renderPens();go('s-draw');sizePad();SFX.whoosh();drawTimer.start(80)};
+$('drawGot').onclick=()=>{drawTimer.stop();$('drawWhoList').innerHTML=players.filter(p=>p!==draw.drawer).map(p=>`<button class="opt" style="text-align:left">${esc(p)}</button>`).join('');
+  $('drawWhoList').querySelectorAll('.opt').forEach(b=>b.onclick=()=>drawEnd(true,b.textContent));go('s-drawWho')};
+$('drawGive').onclick=()=>drawEnd(false);
+function drawEnd(ok,who){
+  drawTimer.stop();
+  if(ok){[draw.drawer,who].forEach(p=>{draw.pts[p]=(draw.pts[p]||0)+1});award([draw.drawer,who]);SFX.win();confetti();
+    modal(`${who} got it! The word was "${draw.word}". A point for them and the artist 🎉`)}
+  else{SFX.lose();modal(`Nobody got it 😅 The word was "${draw.word}"`)}
+  draw.i++;drawPass();
+}
+
+// ================= قصة جماعية =================
+let story=null;
+function storyTurn(){const p=story.order[story.i%story.order.length];if(!story.deck.length)story.deck=shuffle(STORY_WORDS);
+  $('storyName').textContent=p;$('storyWord').textContent=story.deck.pop();$('storyCount').textContent=`Sentence #${story.i+1}`;
+  anim($('storyName'),'pop');anim($('storyWord'),'flip')}
+function storyNew(){countRound();story={order:shuffle(players),i:0,deck:shuffle(STORY_WORDS)};$('storyStart').textContent=pick(STORY_START);anim($('storyStartBox'),'pop');storyTurn()}
+$('startStory').onclick=()=>{storyNew();go('s-story')};
+$('storyNext').onclick=()=>{story.i++;SFX.whoosh();storyTurn()};
+$('storyNew').onclick=storyNew;
+
+// ================= إنسان حيوان نبات جماد =================
+let lt={secs:store.get('jalsa_lsecs',90),totals:{},round:0,used:[]};
+function renderLTimes(){$('lettersTimes').innerHTML=[[60,'1 min'],[90,'1.5 min'],[120,'2 min']].map(([s,l])=>`<button class="cat ${s===lt.secs?'sel':''}" data-s="${s}">${l}</button>`).join('');
+  $('lettersTimes').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{lt.secs=+b.dataset.s;store.set('jalsa_lsecs',lt.secs);renderLTimes()})}
+renderLTimes();
+const lettersTimer=new Timer('lettersTimer',()=>lettersScore(),'s-letters');
+function lettersRound(){
+  countRound();let pool=LETTERS.filter(l=>!lt.used.includes(l));if(!pool.length){lt.used=[];pool=LETTERS}
+  const L=pick(pool);lt.used.push(L);$('lettersLetter').textContent=L;go('s-letters');anim($('lettersLetter'),'pop');SFX.reveal();lettersTimer.start(lt.secs)}
+$('lettersStart').onclick=()=>{lt.totals={};lt.round=0;lt.used=[];lettersRound()};
+$('lettersStop').onclick=()=>{lettersTimer.stop();SFX.end();buzz(300);lettersScore()};
+let ltRound={};
+function lettersScore(){
+  ltRound={};players.forEach(p=>ltRound[p]=0);
+  const draw=()=>{$('lettersRows').innerHTML=players.map(p=>`<div class="score"><span>${esc(p)}</span><div class="step"><button data-p="${esc(p)}" data-d="-5">−</button><b>${ar(ltRound[p])}</b><button data-p="${esc(p)}" data-d="5">+</button></div></div>`).join('');
+    $('lettersRows').querySelectorAll('button').forEach(b=>b.onclick=()=>{const p=b.dataset.p;ltRound[p]=Math.max(0,ltRound[p]+ +b.dataset.d);draw()})};
+  draw();go('s-lettersScore');
+}
+$('lettersSave').onclick=()=>{players.forEach(p=>lt.totals[p]=(lt.totals[p]||0)+ltRound[p]);lt.round++;
+  $('lettersRoundN').textContent=`${lt.round} ${lt.round===1?'round':'rounds'}`;scoreList('lettersTotals',lt.totals);go('s-lettersTotal')};
+$('lettersAgain').onclick=lettersRound;
+$('lettersEnd').onclick=()=>{const best=Math.max(...players.map(p=>lt.totals[p]||0));const w=players.filter(p=>(lt.totals[p]||0)===best);
+  if(best<=0){go('s-modes');return}
+  award(w);winScreen('Winner',w.join(' & '),ptsTxt(best),()=>go('s-lettersSetup'))};
+
+// ================= مين يصب القهوة؟ =================
+let wheelQ=WHEEL_QS[0], wAngle=0, spinning=false;
+const WCOLS=['#e8b04b','#6aa8d8','#e2674f','#6cbf84','#c98bd8','#f3c86e','#5fb3b3','#d98c5f'];
+function drawWheel(){
+  const c=$('wheel'),d=devicePixelRatio||1,W=c.getBoundingClientRect().width||340;c.width=W*d;c.height=W*d;
+  const x=c.getContext('2d');x.scale(d,d);const R=W/2-6,cx=W/2,cy=W/2,n=players.length,seg=Math.PI*2/n;
+  x.clearRect(0,0,W,W);
+  players.forEach((p,i)=>{const a0=wAngle+i*seg-Math.PI/2;
+    x.beginPath();x.moveTo(cx,cy);x.arc(cx,cy,R,a0,a0+seg);x.closePath();x.fillStyle=WCOLS[i%WCOLS.length];x.fill();
+    x.strokeStyle='#1a1410';x.lineWidth=3;x.stroke();
+    const mid=a0+seg/2,norm=((mid%(Math.PI*2))+Math.PI*2)%(Math.PI*2),flip=norm>Math.PI/2&&norm<Math.PI*1.5;
+    x.save();x.translate(cx,cy);x.rotate(mid);if(flip)x.rotate(Math.PI);x.textAlign=flip?'left':'right';x.fillStyle='#1a1410';
+    x.font=`700 ${Math.max(14,Math.min(22,200/n))}px Tajawal, sans-serif`;x.fillText(p.length>9?p.slice(0,9)+'…':p,flip?-(R-14):R-14,7);x.restore()});
+  x.beginPath();x.arc(cx,cy,26,0,7);x.fillStyle='#1a1410';x.fill();x.font='24px sans-serif';x.textAlign='center';x.fillText('☕',cx,cy+8);
+}
+function renderWheelQs(){$('wheelQs').innerHTML=WHEEL_QS.map(q=>`<button class="cat ${q===wheelQ?'sel':''}">${q}</button>`).join('');
+  $('wheelQs').querySelectorAll('.cat').forEach(b=>b.onclick=()=>{wheelQ=b.textContent;renderWheelQs();$('wheelRes').textContent=''})}
+$('toWheel').onclick=()=>{renderWheelQs();$('wheelRes').textContent='';go('s-wheel');requestAnimationFrame(drawWheel)};
+$('spin').onclick=()=>{
+  if(spinning)return;spinning=true;$('wheelRes').textContent='';
+  const n=players.length,seg=Math.PI*2/n,start=wAngle,total=Math.PI*2*(5+Math.random()*3)+Math.random()*Math.PI*2,dur=4200,t0=performance.now();
+  let lastSeg=-1;
+  (function frame(t){const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);wAngle=start+total*e;drawWheel();
+    const cur=Math.floor((((-wAngle)%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/seg);if(cur!==lastSeg){lastSeg=cur;SFX.tick()}
+    if(k<1)requestAnimationFrame(frame);else{spinning=false;
+      const idx=Math.floor((((-wAngle)%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/seg)%n;
+      $('wheelRes').textContent=`${players[idx]}! ${wheelQ.includes('coffee')?'☕ Pour us some!':''}`;
+      anim($('wheelRes'),'pop');SFX.win();confetti()}})(t0);
+};
+addEventListener('resize',()=>{if(current==='s-wheel')drawWheel()});
+
+// ================= عدّاد البلوت =================
+let bal=store.get('jalsa_baloot',{h:[]}); const B_TARGET=152;
+function balSum(k){return bal.h.filter(x=>x.k===k).reduce((a,b)=>a+b.v,0)}
+function renderBal(){
+  const us=balSum('us'),them=balSum('them');$('bUs').textContent=ar(us);$('bThem').textContent=ar(them);
+  $('bHist').innerHTML=bal.h.slice().reverse().map((x,i)=>`<div class="item"><span>${x.k==='us'?'Us':'Them'}</span><b dir="ltr" style="color:${x.k==='us'?'var(--gold)':'var(--blue)'}">+${ar(x.v)}</b></div>`).join('');
+  const w=us>=B_TARGET||them>=B_TARGET?(us===them?null:(us>them?'Us':'Them')):null;
+  $('bTarget').textContent=w?`🏆 ${w} win the game!`:`First to ${B_TARGET} wins · Us need ${Math.max(0,B_TARGET-us)}, Them need ${Math.max(0,B_TARGET-them)}`;
+  store.set('jalsa_baloot',bal);return w;
+}
+function balAdd(k){const raw=$('bIn').value.replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();const v=parseInt(raw,10);
+  if(!(v>0)){anim($('bIn'),'shake');return}bal.h.push({k,v});$('bIn').value='';SFX.point();
+  const before=renderBal();if(before){SFX.win();confetti()}}
+$('bAddUs').onclick=()=>balAdd('us');$('bAddThem').onclick=()=>balAdd('them');
+$('bUndo').onclick=()=>{bal.h.pop();renderBal()};
+$('bReset').onclick=()=>modal('Start a new game from zero?',()=>{bal={h:[]};renderBal()});
+document.querySelector('[data-go="s-baloot"]').addEventListener('click',renderBal);
+
+// ================= المشاركة =================
+const SHARE_MSG=`Try "Jalsa" 🎮🔥 party games on one phone: The Spy, Who's Most Likely, Taboo, Draw It and more 👇\n${GAME_URL}`;
+$('toShare').onclick=()=>{
+  $('shareUrl').textContent=GAME_URL.replace('https://','');
+  $('waLink').href='https://wa.me/?text='+encodeURIComponent(SHARE_MSG);
+  try{const q=qrcode(0,'M');q.addData(GAME_URL);q.make();const n=q.getModuleCount(),c=$('qr'),sz=8,d=n*sz;c.width=d;c.height=d;
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,d,d);x.fillStyle='#1a1410';
+    for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect(k*sz,r*sz,sz,sz)}catch(e){$('qr').style.display='none'}
+  go('s-share')};
+$('copyLink').onclick=()=>{try{navigator.clipboard.writeText(GAME_URL).then(()=>modal('Link copied ✓'),()=>modal(GAME_URL))}catch(e){modal(GAME_URL)}};
+
+// ================= بطاقة الفائز =================
+let cardBlob=null;
+async function makeCard(){
+  try{await document.fonts.load('800 40px Tajawal');await document.fonts.load('500 20px Tajawal')}catch(e){}
+  const list=players.map(p=>[p,tally[p]||0]).concat(Object.keys(tally).filter(k=>!players.includes(k)).map(k=>[k,tally[k]])).sort((a,b)=>b[1]-a[1]);
+  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const g=x.createRadialGradient(W/2,0,50,W/2,H/2,H);g.addColorStop(0,'#4a331c');g.addColorStop(1,'#1a1410');x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.direction='ltr';x.textAlign='center';
+  x.fillStyle='#e8b04b';x.font='800 96px Tajawal, sans-serif';x.fillText('الجلسة',W/2,170);
+  x.fillStyle='#bfa98f';x.font='500 40px Tajawal, sans-serif';x.fillText("TONIGHT'S CHAMPION",W/2,290);
+  x.font='160px sans-serif';x.fillText('🏆',W/2,480);
+  const champ=list[0]&&list[0][1]>0?list[0]:null;
+  x.fillStyle='#f6ece0';x.font='800 110px Tajawal, sans-serif';x.fillText(champ?champ[0]:'—',W/2,640);
+  if(champ){x.fillStyle='#f3c86e';x.font='700 46px Tajawal, sans-serif';x.fillText(cnt(champ[1],'1 win','','','wins'),W/2,720)}
+  const medals=['🥈','🥉'],rest=list.slice(1,3).filter(r=>r[1]>0);
+  rest.forEach((r,i)=>{const y=860+i*120;x.fillStyle='rgba(255,255,255,.06)';
+    x.beginPath();x.roundRect?x.roundRect(160,y-70,W-320,100,30):x.rect(160,y-70,W-320,100);x.fill();
+    x.textAlign='left';x.fillStyle='#f6ece0';x.font='700 48px Tajawal, sans-serif';x.fillText(`${medals[i]}  ${r[0]}`,210,y);
+    x.textAlign='right';x.fillStyle='#e8b04b';x.fillText(ar(r[1]),W-210,y);x.textAlign='center'});
+  const d=new Date();let ds;try{ds=d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}catch(e){ds=''}
+  x.fillStyle='#bfa98f';x.font='500 38px Tajawal, sans-serif';x.fillText(ds,W/2,1170);
+  x.fillStyle='#e8b04b';x.font='700 40px Tajawal, sans-serif';x.fillText('Play: cumds.github.io/jalsa',W/2,1260);
+  return c;
+}
+$('toCard').onclick=async()=>{
+  if(!Object.values(tally).some(v=>v>0)){modal('Play a few rounds first, then the card unlocks 😉');return}
+  const c=await makeCard();$('cardImg').src=c.toDataURL('image/png');
+  cardBlob=await new Promise(r=>{try{c.toBlob(r,'image/png')}catch(e){r(null)}});go('s-card')};
+$('cardBack').onclick=()=>{renderTally();go('s-tally')};
+$('cardShare').onclick=async()=>{
+  try{const f=new File([cardBlob],'jalsa.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:SHARE_MSG});return}}catch(e){if(e&&e.name==='AbortError')return}
+  modal('Long-press the image and choose Save or Share');
+};
+
+if('serviceWorker' in navigator && location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
