@@ -2443,7 +2443,7 @@ var qrcode = function() {
   .sadu.thin{height:14px;background-size:28px 14px;border-width:2px;border-radius:4px;margin:-8px 30px 20px;opacity:.9}
   .homehead{display:flex;align-items:center;justify-content:center;gap:6px}
   .homehead h1{margin:0}
-  .dallah.mini{width:46px;height:60px}
+  .dallah.mini{width:46px;height:64px}
   .dallah.mini .steam path{animation:steam 2.4s ease-in-out infinite}
   .screen{animation:in .32s cubic-bezier(.2,.8,.2,1)}
   @keyframes in{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
@@ -2458,8 +2458,8 @@ var qrcode = function() {
   @keyframes slideR{from{transform:translateX(100%)}to{transform:none}}
   @keyframes slideL{from{transform:translateX(-100%)}to{transform:none}}
   .splash-in{text-align:center;padding:0 24px}
-  #splash .dallah{width:130px;height:173px;filter:drop-shadow(0 10px 30px rgba(232,176,75,.35));
-    animation:drop .9s .25s cubic-bezier(.2,1.4,.4,1) both, pour 3.2s 1.3s ease-in-out infinite;transform-origin:62px 140px}
+  #splash .dallah{width:150px;height:206px;filter:drop-shadow(0 10px 30px rgba(232,176,75,.35));
+    animation:drop .9s .25s cubic-bezier(.2,1.4,.4,1) both, pour 3.2s 1.3s ease-in-out infinite;transform-origin:50% 95%}
   @keyframes drop{from{opacity:0;transform:translateY(-80px) scale(.7)}to{opacity:1;transform:none}}
   @keyframes pour{0%,100%{transform:rotate(0)}45%,60%{transform:rotate(-14deg)}}
   .dallah .steam path{animation:steam 2.4s ease-in-out infinite;opacity:0}
@@ -2528,18 +2528,51 @@ var qrcode = function() {
   <div class="stars"></div>
   <div class="sadu s-top"></div>
   <div class="splash-in">
-    <svg class="dallah" viewBox="0 0 120 160" aria-hidden="true">
-  <defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#b9822c"/><stop offset=".45" stop-color="#f3c86e"/><stop offset="1" stop-color="#a8701f"/></linearGradient></defs>
-  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="3" stroke-linecap="round">
-    <path d="M10 36 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M20 34 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M2 38 q-6 -8 0 -16 q6 -8 0 -16"/></g>
-  <circle cx="62" cy="9" r="5" fill="url(#dg)"/>
-  <path d="M48 36 Q62 4 76 36 Z" fill="url(#dg)"/>
-  <path d="M53 36 L71 36 L74 54 L50 54 Z" fill="url(#dg)"/>
-  <path d="M86 70 Q110 76 102 110 Q98 120 86 117" fill="none" stroke="url(#dg)" stroke-width="7" stroke-linecap="round"/>
-  <path d="M42 84 Q22 72 12 44 Q11 39 17 40 Q26 62 48 94 Z" fill="url(#dg)"/>
-  <path d="M50 54 Q34 64 33 92 Q32 122 44 134 L80 134 Q92 122 91 92 Q90 64 74 54 Z" fill="url(#dg)"/>
-  <path d="M36 80 L88 80 M34 100 L90 100" stroke="#7a4f14" stroke-width="2.5" opacity=".6"/>
-  <ellipse cx="62" cy="138" rx="27" ry="6" fill="url(#dg)"/>
+    <svg class="dallah" viewBox="0 0 160 220" aria-hidden="true">
+  <defs>
+    <linearGradient id="dam" x1="0" x2="1">
+      <stop offset="0" stop-color="#6e4510"/><stop offset=".18" stop-color="#b47a22"/><stop offset=".38" stop-color="#f3cd78"/>
+      <stop offset=".48" stop-color="#fff2cc"/><stop offset=".6" stop-color="#e2a948"/><stop offset=".85" stop-color="#94621a"/><stop offset="1" stop-color="#5c390c"/>
+    </linearGradient>
+    <linearGradient id="dad" x1="0" x2="1"><stop offset="0" stop-color="#5c390c"/><stop offset=".45" stop-color="#c58e33"/><stop offset="1" stop-color="#4a2e09"/></linearGradient>
+    <linearGradient id="das" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a4d12"/><stop offset=".55" stop-color="#f6d58c"/><stop offset="1" stop-color="#9c6a1c"/></linearGradient>
+    <radialGradient id="dah" cx=".35" cy=".35" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <ellipse cx="90" cy="210" rx="44" ry="6" fill="#000" opacity=".35"/>
+  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="2.6" stroke-linecap="round">
+    <path d="M14 64 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M24 62 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M5 66 q-6 -8 0 -16 q6 -8 0 -16"/></g>
+  <!-- المنقار -->
+  <path d="M60 178 C34 164 18 124 11 76 C10 71 14 70 17 73 L20 78 C26 118 42 146 66 156 Z" fill="url(#das)"/>
+  <path d="M11 76 C9 70 13 67 17 71 L22 79 L17 80 Z" fill="#fff2cc" opacity=".7"/>
+  <!-- المقبض -->
+  <path d="M112 108 C138 98 150 128 140 158 C135 172 128 180 118 182" fill="none" stroke="url(#dad)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M112 108 C138 98 150 128 140 158" fill="none" stroke="#f6d58c" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+  <circle cx="139" cy="112" r="4.5" fill="url(#dam)"/>
+  <!-- القاعدة -->
+  <path d="M60 198 L120 198 L128 207 Q90 213 52 207 Z" fill="url(#dam)"/>
+  <!-- البطن -->
+  <path d="M64 198 C44 186 42 150 62 132 L118 132 C138 150 136 186 116 198 Z" fill="url(#dam)"/>
+  <ellipse cx="74" cy="160" rx="10" ry="22" fill="url(#dah)"/>
+  <path d="M54 174 Q90 185 126 174" fill="none" stroke="#6e4510" stroke-width="1.6" opacity=".55"/>
+  <path d="M50 158 Q90 168 130 158" fill="none" stroke="#6e4510" stroke-width="1.2" opacity=".4"/>
+  <!-- الحزام المنقوش -->
+  <rect x="60" y="125" width="60" height="8" rx="2" fill="url(#dad)"/>
+  <g fill="#ffe9b0" opacity=".85"><circle cx="64.0" cy="129" r="1.3"/><circle cx="70.5" cy="129" r="1.3"/><circle cx="77.0" cy="129" r="1.3"/><circle cx="83.5" cy="129" r="1.3"/><circle cx="90.0" cy="129" r="1.3"/><circle cx="96.5" cy="129" r="1.3"/><circle cx="103.0" cy="129" r="1.3"/><circle cx="109.5" cy="129" r="1.3"/><circle cx="116.0" cy="129" r="1.3"/></g>
+  <!-- الصدر -->
+  <path d="M64 125 C69 110 75 99 80 92 L100 92 C105 99 111 110 116 125 Z" fill="url(#dam)"/>
+  <path d="M70 118 L110 118" stroke="#6e4510" stroke-width="1.2" opacity=".45"/>
+  <ellipse cx="90" cy="91" rx="15" ry="3.5" fill="url(#dad)"/>
+  <!-- الرقبة -->
+  <path d="M81 90 L99 90 L97 63 L83 63 Z" fill="url(#dam)"/>
+  <path d="M83 78 L97 78 M83.5 72 L96.5 72" stroke="#6e4510" stroke-width="1" opacity=".5"/>
+  <!-- الفوهة والغطاء -->
+  <path d="M77 63 L103 63 L108 56 L72 56 Z" fill="url(#dad)"/>
+  <path d="M73 56 C75 40 105 40 107 56 Z" fill="url(#dam)"/>
+  <ellipse cx="90" cy="43" rx="9" ry="2.6" fill="url(#dad)"/>
+  <circle cx="90" cy="37" r="4.6" fill="url(#dam)"/>
+  <circle cx="90" cy="29" r="3.3" fill="url(#dam)"/>
+  <path d="M88.2 27 L90 13 L91.8 27 Z" fill="url(#dam)"/>
+  <circle cx="88.5" cy="35.5" r="1.4" fill="#fff" opacity=".7"/>
 </svg>
     <div class="logo">الجلسة</div>
     <div class="tag">ألعاب الاستراحة… على جوال واحد</div>
@@ -2552,18 +2585,51 @@ var qrcode = function() {
 
   <!-- اللاعبين -->
   <section class="screen on" id="s-home">
-    <div class="homehead"><svg class="dallah mini" viewBox="0 0 120 160" aria-hidden="true">
-  <defs><linearGradient id="dg2" x1="0" x2="1"><stop offset="0" stop-color="#b9822c"/><stop offset=".45" stop-color="#f3c86e"/><stop offset="1" stop-color="#a8701f"/></linearGradient></defs>
-  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="3" stroke-linecap="round">
-    <path d="M10 36 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M20 34 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M2 38 q-6 -8 0 -16 q6 -8 0 -16"/></g>
-  <circle cx="62" cy="9" r="5" fill="url(#dg2)"/>
-  <path d="M48 36 Q62 4 76 36 Z" fill="url(#dg2)"/>
-  <path d="M53 36 L71 36 L74 54 L50 54 Z" fill="url(#dg2)"/>
-  <path d="M86 70 Q110 76 102 110 Q98 120 86 117" fill="none" stroke="url(#dg2)" stroke-width="7" stroke-linecap="round"/>
-  <path d="M42 84 Q22 72 12 44 Q11 39 17 40 Q26 62 48 94 Z" fill="url(#dg2)"/>
-  <path d="M50 54 Q34 64 33 92 Q32 122 44 134 L80 134 Q92 122 91 92 Q90 64 74 54 Z" fill="url(#dg2)"/>
-  <path d="M36 80 L88 80 M34 100 L90 100" stroke="#7a4f14" stroke-width="2.5" opacity=".6"/>
-  <ellipse cx="62" cy="138" rx="27" ry="6" fill="url(#dg2)"/>
+    <div class="homehead"><svg class="dallah mini" viewBox="0 0 160 220" aria-hidden="true">
+  <defs>
+    <linearGradient id="dbm" x1="0" x2="1">
+      <stop offset="0" stop-color="#6e4510"/><stop offset=".18" stop-color="#b47a22"/><stop offset=".38" stop-color="#f3cd78"/>
+      <stop offset=".48" stop-color="#fff2cc"/><stop offset=".6" stop-color="#e2a948"/><stop offset=".85" stop-color="#94621a"/><stop offset="1" stop-color="#5c390c"/>
+    </linearGradient>
+    <linearGradient id="dbd" x1="0" x2="1"><stop offset="0" stop-color="#5c390c"/><stop offset=".45" stop-color="#c58e33"/><stop offset="1" stop-color="#4a2e09"/></linearGradient>
+    <linearGradient id="dbs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a4d12"/><stop offset=".55" stop-color="#f6d58c"/><stop offset="1" stop-color="#9c6a1c"/></linearGradient>
+    <radialGradient id="dbh" cx=".35" cy=".35" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <ellipse cx="90" cy="210" rx="44" ry="6" fill="#000" opacity=".35"/>
+  <g class="steam" fill="none" stroke="#f6ece0" stroke-width="2.6" stroke-linecap="round">
+    <path d="M14 64 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M24 62 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M5 66 q-6 -8 0 -16 q6 -8 0 -16"/></g>
+  <!-- المنقار -->
+  <path d="M60 178 C34 164 18 124 11 76 C10 71 14 70 17 73 L20 78 C26 118 42 146 66 156 Z" fill="url(#dbs)"/>
+  <path d="M11 76 C9 70 13 67 17 71 L22 79 L17 80 Z" fill="#fff2cc" opacity=".7"/>
+  <!-- المقبض -->
+  <path d="M112 108 C138 98 150 128 140 158 C135 172 128 180 118 182" fill="none" stroke="url(#dbd)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M112 108 C138 98 150 128 140 158" fill="none" stroke="#f6d58c" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+  <circle cx="139" cy="112" r="4.5" fill="url(#dbm)"/>
+  <!-- القاعدة -->
+  <path d="M60 198 L120 198 L128 207 Q90 213 52 207 Z" fill="url(#dbm)"/>
+  <!-- البطن -->
+  <path d="M64 198 C44 186 42 150 62 132 L118 132 C138 150 136 186 116 198 Z" fill="url(#dbm)"/>
+  <ellipse cx="74" cy="160" rx="10" ry="22" fill="url(#dbh)"/>
+  <path d="M54 174 Q90 185 126 174" fill="none" stroke="#6e4510" stroke-width="1.6" opacity=".55"/>
+  <path d="M50 158 Q90 168 130 158" fill="none" stroke="#6e4510" stroke-width="1.2" opacity=".4"/>
+  <!-- الحزام المنقوش -->
+  <rect x="60" y="125" width="60" height="8" rx="2" fill="url(#dbd)"/>
+  <g fill="#ffe9b0" opacity=".85"><circle cx="64.0" cy="129" r="1.3"/><circle cx="70.5" cy="129" r="1.3"/><circle cx="77.0" cy="129" r="1.3"/><circle cx="83.5" cy="129" r="1.3"/><circle cx="90.0" cy="129" r="1.3"/><circle cx="96.5" cy="129" r="1.3"/><circle cx="103.0" cy="129" r="1.3"/><circle cx="109.5" cy="129" r="1.3"/><circle cx="116.0" cy="129" r="1.3"/></g>
+  <!-- الصدر -->
+  <path d="M64 125 C69 110 75 99 80 92 L100 92 C105 99 111 110 116 125 Z" fill="url(#dbm)"/>
+  <path d="M70 118 L110 118" stroke="#6e4510" stroke-width="1.2" opacity=".45"/>
+  <ellipse cx="90" cy="91" rx="15" ry="3.5" fill="url(#dbd)"/>
+  <!-- الرقبة -->
+  <path d="M81 90 L99 90 L97 63 L83 63 Z" fill="url(#dbm)"/>
+  <path d="M83 78 L97 78 M83.5 72 L96.5 72" stroke="#6e4510" stroke-width="1" opacity=".5"/>
+  <!-- الفوهة والغطاء -->
+  <path d="M77 63 L103 63 L108 56 L72 56 Z" fill="url(#dbd)"/>
+  <path d="M73 56 C75 40 105 40 107 56 Z" fill="url(#dbm)"/>
+  <ellipse cx="90" cy="43" rx="9" ry="2.6" fill="url(#dbd)"/>
+  <circle cx="90" cy="37" r="4.6" fill="url(#dbm)"/>
+  <circle cx="90" cy="29" r="3.3" fill="url(#dbm)"/>
+  <path d="M88.2 27 L90 13 L91.8 27 Z" fill="url(#dbm)"/>
+  <circle cx="88.5" cy="35.5" r="1.4" fill="#fff" opacity=".7"/>
 </svg><h1>الجلسة</h1></div>
     <p class="sub">ألعاب للاستراحة على جوال واحد</p>
     <div class="sadu thin"></div>
@@ -2578,7 +2644,7 @@ var qrcode = function() {
     </div>
     <button class="btn" id="toModes" disabled>يلا نلعب</button>
     <div class="live" id="live"></div>
-    <p class="count" style="opacity:.6">نسخة ٩</p>
+    <p class="count" style="opacity:.6">نسخة ١٠</p>
   </section>
 
   <!-- القائمة -->
